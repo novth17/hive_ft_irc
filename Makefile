@@ -41,6 +41,9 @@ test: all
 leaks: all
 	valgrind --track-fds=yes ./$(NAME) 6667 secret
 
-.PHONY: all clean fclean re test
+irssi:
+	irssi -c localhost -w secret
+
+.PHONY: all clean fclean re test leaks irssi
 .SECONDARY: $(OBJ)
 -include $(DEP)

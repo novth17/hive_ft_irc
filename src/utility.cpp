@@ -83,3 +83,14 @@ int sendf(int socket, const char* format, ...)
 	// Send the formatted string.
 	return send(socket, buffer, length - 1, 0);
 }
+
+/**
+  * Check if two null-terminated strings match, ignoring lower/upper case.
+  */
+bool matchIgnoreCase(const char* a, const char* b)
+{
+	for (; *a || *b; a++, b++)
+		if (std::toupper(*a) != std::toupper(*b))
+			return false;
+	return true;
+}

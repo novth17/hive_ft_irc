@@ -1,10 +1,11 @@
 #pragma once
 
-#include <iostream>
 #include <map>
+#include <stdexcept>
 
 #define PORT_MAX 65535 // The maximum allowed port number.
 #define MAX_BACKLOG 20 // Maximum length of the pending connection queue.
+#define MAX_MESSAGE_PARTS 15 // Maximum number of parts/params in one message.
 
 // ANSI escape codes for nicer terminal output.
 #define ANSI_RED	"\x1b[31m"
@@ -17,44 +18,47 @@
 // of the format string parameter.
 #define CHECK_FORMAT(x) __attribute__((format(printf, x, x + 1)))
 
+struct Client
+{
+	int socket = -1;			// The socket used for the client's connection.
+	std::string nick;			// The client's nickname.
+	std::string user;			// The client's user name.
+	bool isOperator = false;	// True if the client is an operator.
+	std::string input;			// Buffered data from recv().
+	std::string output;			// Buffered data for send().
+};
+
+struct Channel
+{
+	std::string name;	// The name of the channel.
+	std::string topic;	// The current topic for the channel.
+};
+
 class Server
 {
 public:
 	Server(const char* port, const char* password);
 	~Server();
 
-	//void start();
-	void handleNewConnection();
-	int eventLoop(const char* host, const char* port);
+	void eventLoop(const char* host, const char* port);
 
-	private:
+private:
+	void parseMessage(std::string message);
+	void handleMessage(char** params, int paramCount);
+
+	// Handlers for specific messages.
+	void handleUser(char** params, int paramCount);
+	void handleNick(char** params, int paramCount);
+	void handlePass(char** params, int paramCount);
+	void handleCap(char** params, int paramCount);
+	void handleJoin(char** params, int paramCount);
 
 	const char* _port = nullptr;
 	const char* _password = nullptr;
-
 	int _serverFd = -1;
 	int _epollFd = -1;
-	//std::map<int, Connection> _connections;
-};
-
-class Client
-{
-public:
-	Client(const std::string& nick);
-
-private:
-	std::string nick;
-	bool isOperator = false;
-};
-
-class Channel
-{
-public:
-	Channel(const std::string& name);
-
-private:
-	std::string name;
-	std::string topic;
+	std::map<int, Client> _clients;
+	std::map<std::string, Channel> _channels;
 };
 
 // utility.cpp
@@ -63,6 +67,7 @@ void logInfo(const char* format, ...) CHECK_FORMAT(1);
 void logWarn(const char* format, ...) CHECK_FORMAT(1);
 void logError(const char* format, ...) CHECK_FORMAT(1);
 int sendf(int socket, const char* format, ...) CHECK_FORMAT(2);
+bool matchIgnoreCase(const char* a, const char* b);
 
 /**
  * Throw an exception with an error message given using printf-style formatting
