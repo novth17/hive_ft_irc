@@ -1,3 +1,6 @@
+#include <iostream>
+
+#include "irc.hpp"
 #include "SocketUtils.hpp"
 
 bool SocketUtils::setNonBlocking(int fd) {
@@ -59,7 +62,7 @@ int SocketUtils::createListenSocket(const char* host, const char* port, bool isN
  		std::cerr << "bind failed: " << strerror(errno) << std::endl;
 		closeAndClean("Failed to bind socket", sockfd, result);
 	}
-    if (listen(sockfd, MAX_CLIENTS) < 0)
+    if (listen(sockfd, MAX_BACKLOG) < 0)
 		closeAndClean("Failed to listen on socket", sockfd, result);
 
     if (isNonBlocking && !setNonBlocking(sockfd))

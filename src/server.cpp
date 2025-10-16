@@ -1,7 +1,7 @@
 #include <signal.h>
 
-#include "events.hpp"
 #include "irc.hpp"
+#include "SocketUtils.hpp"
 
 Server::Server(const char* port, const char* password)
 	: _port(port), _password(password)
@@ -52,7 +52,7 @@ void Server::eventLoop(const char* host, const char* port)
 		int numberOfReadyEvents = epoll_wait(_epollFd, events, MAX_EVENTS, -1);
 		if (numberOfReadyEvents == -1) {
 			if (errno == EINTR) {
-				std::cerr << "\r"; // Just to avoid printing ^C.
+				fprintf(stderr, "\r"); // Just to avoid printing ^C.
 				logInfo("Interrupted by user");
 				break;
 			}

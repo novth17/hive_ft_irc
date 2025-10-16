@@ -1,11 +1,18 @@
 #pragma once
 
+#include <fcntl.h>
 #include <map>
+#include <netdb.h>
 #include <stdexcept>
+#include <string.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #define PORT_MAX 65535 // The maximum allowed port number.
 #define MAX_BACKLOG 20 // Maximum length of the pending connection queue.
 #define MAX_MESSAGE_PARTS 15 // Maximum number of parts/params in one message.
+#define MAX_EVENTS 10 // The maximum number of events received by epoll.
 
 // ANSI escape codes for nicer terminal output.
 #define ANSI_RED	"\x1b[31m"

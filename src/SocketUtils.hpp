@@ -1,5 +1,4 @@
 #pragma once
-#include "events.hpp"
 
 namespace SocketUtils {
 	bool	setNonBlocking(int fd);
