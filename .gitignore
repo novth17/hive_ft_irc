@@ -1,2 +1,4 @@
 .build/
 ircserv
+.vscode
+.DS_Store

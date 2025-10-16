@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     if (errno == ERANGE || port < 0 || port > PORT_MAX) {
         printf("error: port number must be in [0, %d]\n", PORT_MAX);
         return EXIT_FAILURE;
-    
+
     // Check that the whole string was used.
     } else if (strlen(argv[1]) == 0 || end != argv[1] + strlen(argv[1])) {
         printf("error: invalid port number '%s'\n", argv[1]);
@@ -32,5 +32,5 @@ int main(int argc, char** argv)
 
     // Start the server.
     Server server(argv[1], argv[2]);
-    server.start();
+    server.eventLoop(NULL, argv[1]);
 }
