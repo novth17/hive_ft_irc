@@ -76,13 +76,13 @@ void Server::eventLoop(const char* host, const char* port)
 				// Register the connection with epoll.
 				Client& client = _clients[clientFd];
 				client.socket = clientFd;
-				epollEvent.events = EPOLLIN;
+				epollEvent.events = EPOLLIN | EPOLLOUT;
 				epollEvent.data.fd = clientFd;
 				if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
 					throwf("Failed to add client socket to epoll: %s", strerror(errno));
 				logInfo("Client connected (fd = %d)", clientFd);
 
-			// Receive data from a client.
+			// Exchange data with a client.
 			} else {
 
 				// Find the Client object for this connection.
@@ -91,35 +91,92 @@ void Server::eventLoop(const char* host, const char* port)
 					throwf("Client for fd %d not found", fd);
 				Client& client = found->second;
 
-				// Receive data from the socket.
-				char buffer[512];
-				ssize_t bytesRead = recv(fd, buffer, sizeof(buffer), 0);
-
-				// Handle errors.
-				if (bytesRead == -1) {
-					throwf("Failed to receive from client: %s", strerror(errno));
-
-				// Handle client disconnection.
-				} else if (bytesRead == 0) {
-					logInfo("Client disconnected (fd = %d)", fd);
-					epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, nullptr);
-					_clients.erase(fd);
-					safeClose(fd);
-
-				// Buffer received data and check for complete messages.
-				} else {
-					std::string& input = client.input.append(buffer, bytesRead);
-					while (true) {
-						size_t newline = input.find("\r\n");
-						if (newline == input.npos)
-							break;
-						auto begin = input.begin();
-						auto end = input.begin() + newline;
-						parseMessage(client, std::string_view(begin, end));
-						input.erase(0, newline + 2);
-					}
-				}
+				// Exchange data with the client.
+				sendToClient(client);
+				receiveFromClient(client);
 			}
+		}
+	}
+}
+
+void Server::receiveFromClient(Client& client)
+{
+	// Receive data from the client.
+	char buffer[512];
+	ssize_t bytes = 1;
+	while (bytes > 0) {
+		bytes = recv(client.socket, buffer, sizeof(buffer), 0);
+
+		// Handle errors.
+		if (bytes == -1) {
+			if (errno == EAGAIN)
+				break; // Nothing more to read.
+			throwf("Failed to receive from client: %s", strerror(errno));
+
+		// Handle client disconnection.
+		} else if (bytes == 0) {
+			logInfo("Client disconnected (fd = %d)", client.socket);
+			epoll_ctl(_epollFd, EPOLL_CTL_DEL, client.socket, nullptr);
+			safeClose(client.socket);
+			_clients.erase(client.socket);
+
+		// Buffer received data.
+		} else {
+			std::string& input = client.input.append(buffer, bytes);
+
+			// Check for complete messages.
+			while (true) {
+				size_t newline = input.find("\r\n");
+				if (newline == input.npos)
+					break;
+				auto begin = input.begin();
+				auto end = input.begin() + newline;
+				parseMessage(client, std::string(begin, end));
+				input.erase(0, newline + 2);
+			}
+		}
+	}
+}
+
+void Server::sendReply(Client& client, const char* format, ...)
+{
+	// Get the length of the formatted string.
+	va_list args;
+	va_start(args, format);
+	int length = 1 + vsnprintf(nullptr, 0, format, args);
+	va_end(args);
+
+	// Get the actual formatted string.
+	va_start(args, format);
+	char buffer[length];
+	vsnprintf(buffer, length, format, args);
+	va_end(args);
+
+	// Send the formatted string with a line break at the end.
+	client.output.append(":server "); // Source.
+	client.output.append(buffer); // Contents of message.
+	client.output.append("\r\n"); // Line break.
+	sendToClient(client);
+}
+
+void Server::sendToClient(Client& client)
+{
+	// Send data to the client.
+	ssize_t bytes = 1;
+	while (bytes > 0) {
+		char* buffer = client.output.data();
+		size_t length = client.output.size();
+		bytes = send(client.socket, buffer, length, 0);
+
+		// Handle errors.
+		if (bytes == -1) {
+			if (errno == EAGAIN)
+				break; // No more space for output.
+			throwf("Failed to send to client: %s", strerror(errno));
+
+		// Remove the sent data from the output buffer.
+		} else {
+			client.output.erase(0, bytes);
 		}
 	}
 }
@@ -128,11 +185,11 @@ void Server::eventLoop(const char* host, const char* port)
  * Parse a raw client message, then pass it to the message handler for the
  * message's command, along with any parameters.
  */
-void Server::parseMessage(Client& client, std::string_view message)
+void Server::parseMessage(Client& client, std::string message)
 {
 	// Array for holding the individual parts of the message.
-	int partCount = 0;
-	std::string_view parts[MAX_MESSAGE_PARTS];
+	int argc = 0;
+	char* argv[MAX_MESSAGE_PARTS];
 
 	// Split the message into parts.
 	size_t begin = 0;
@@ -152,7 +209,7 @@ void Server::parseMessage(Client& client, std::string_view message)
 		if (message[begin] != '@') {
 
 			// Issue a warning if there are too many parts.
-			if (partCount == MAX_MESSAGE_PARTS) {
+			if (argc == MAX_MESSAGE_PARTS) {
 				int length = message.length();
 				const char* data = message.data();
 				logWarn("Message '%.*s' has too many parts", length, data);
@@ -166,10 +223,9 @@ void Server::parseMessage(Client& client, std::string_view message)
 				begin++; // Strip the ':' from the message.
 			}
 
-			// Add the part to the array.
-			auto start = message.begin() + begin;
-			auto stop = message.begin() + end;
-			parts[partCount++] = std::string_view(start, stop);
+			// Add the part to the array and null-terminate it.
+			argv[argc++] = message.data() + begin;
+			message[end] = '\0';
 		}
 
 		// Begin the next part at the end of this one.
@@ -177,5 +233,5 @@ void Server::parseMessage(Client& client, std::string_view message)
 	}
 
 	// Pass the message to its handler.
-	handleMessage(client, parts, partCount);
+	handleMessage(client, argc, argv);
 }

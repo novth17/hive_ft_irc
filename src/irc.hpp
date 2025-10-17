@@ -5,7 +5,6 @@
 #include <netdb.h>
 #include <stdexcept>
 #include <string.h>
-#include <string_view>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -54,16 +53,21 @@ private:
 	bool setNonBlocking(int fd);
 	void closeAndClean(const std::string& msg, int sockfd, struct addrinfo* result);
 	int  createListenSocket(const char* host, const char* port, bool isNonBlocking);
-	
-	void parseMessage(Client& client, std::string_view message);
-	void handleMessage(Client& client, std::string_view* params, int count);
+
+	void receiveFromClient(Client& client);
+	void sendToClient(Client& client);
+
+	void sendReply(Client& client, const char* format, ...) CHECK_FORMAT(3);
+
+	void parseMessage(Client& client, std::string message);
+	void handleMessage(Client& client, int argc, char** argv);
 
 	// Handlers for specific messages.
-	void handleUser(Client& client, std::string_view* params, int count);
-	void handleNick(Client& client, std::string_view* params, int count);
-	void handlePass(Client& client, std::string_view* params, int count);
-	void handleCap(Client& client, std::string_view* params, int count);
-	void handleJoin(Client& client, std::string_view* params, int count);
+	void handleUser(Client& client, int argc, char** argv);
+	void handleNick(Client& client, int argc, char** argv);
+	void handlePass(Client& client, int argc, char** argv);
+	void handleCap(Client& client, int argc, char** argv);
+	void handleJoin(Client& client, int argc, char** argv);
 
 	const char* _port = nullptr;
 	const char* _password = nullptr;
@@ -78,8 +82,7 @@ void safeClose(int& fd);
 void logInfo(const char* format, ...) CHECK_FORMAT(1);
 void logWarn(const char* format, ...) CHECK_FORMAT(1);
 void logError(const char* format, ...) CHECK_FORMAT(1);
-int sendf(int socket, const char* format, ...) CHECK_FORMAT(2);
-bool matchIgnoreCase(std::string_view a, std::string_view b);
+bool matchIgnoreCase(const char* a, const char* b);
 
 /**
  * Throw an exception with an error message given using printf-style formatting

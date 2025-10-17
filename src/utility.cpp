@@ -65,35 +65,12 @@ void logError(const char* format, ...)
 }
 
 /**
- * Send a string to a socket using printf-style formatting syntax. Returns the
- * same value and sets errno the same way as regular send().
- */
-int sendf(int socket, const char* format, ...)
-{
-	// Get the length of the formatted string.
-	va_list args;
-	va_start(args, format);
-	int length = 1 + vsnprintf(nullptr, 0, format, args);
-	va_end(args);
-
-	// Format the string into a temporary buffer.
-	char buffer[length];
-	va_start(args, format);
-	vsnprintf(buffer, length, format, args);
-	va_end(args);
-
-	// Send the formatted string.
-	return send(socket, buffer, length - 1, 0);
-}
-
-/**
   * Check if two null-terminated strings match, ignoring lower/upper case.
   */
-bool matchIgnoreCase(std::string_view a, std::string_view b)
+bool matchIgnoreCase(const char* a, const char* b)
 {
-	if (a.length() != b.length())
-		return false;
-	return std::equal(a.begin(), a.end(), b.begin(), [] (char i, char j) {
-		return std::toupper(i) == std::toupper(j);
-	});
+	for (; *a || *b; a++, b++)
+		if (std::toupper(*a) != std::toupper(*b))
+			return false;
+	return true;
 }

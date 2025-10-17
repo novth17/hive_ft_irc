@@ -4,74 +4,75 @@
  * Handle any type of message. Removes the command from the parameter list, then
  * calls the handler for that command with the remaining parameters.
  */
-void Server::handleMessage(Client& client, std::string_view* params, int count)
+void Server::handleMessage(Client& client, int argc, char** argv)
 {
 	// Ignore empty messages.
-	if (count == 0)
+	if (argc == 0)
 		return;
 
-	// Remove the command from the parameter array.
-	std::string_view cmd = params[0];
-	params++;
-	count--;
+	// Array of message handlers.
+	using Handler = void (Server::*)(Client&, int, char**);
+	static const std::pair<const char*, Handler> handlers[] = {
+		{"USER", &Server::handleUser},
+		{"NICK", &Server::handleNick},
+		{"PASS", &Server::handlePass},
+		{"CAP",  &Server::handleCap},
+		{"JOIN", &Server::handleJoin},
+	};
 
 	// Send the message to the handler for that command.
-	if (matchIgnoreCase(cmd, "USER"))
-		return handleUser(client, params, count);
-	if (matchIgnoreCase(cmd, "NICK"))
-		return handleNick(client, params, count);
-	if (matchIgnoreCase(cmd, "PASS"))
-		return handlePass(client, params, count);
-	if (matchIgnoreCase(cmd, "CAP"))
-		return handleCap(client, params, count);
-	if (matchIgnoreCase(cmd, "JOIN"))
-		return handleJoin(client, params, count);
+	for (const auto& [command, handler]: handlers) {
+		if (matchIgnoreCase(command, argv[0])) {
+			return (this->*handler)(client, argc - 1, argv + 1);
+		}
+	}
 
 	// Log any unimplemented commands, so that they can be added eventually.
-	logError("Unimplemented command '%.*s'", int(cmd.size()), cmd.data());
+	logError("Unimplemented command '%s'", argv[0]);
 }
 
 /**
  * Handle a USER message.
  */
-void Server::handleUser(Client& client, std::string_view* params, int count)
+void Server::handleUser(Client& client, int argc, char** argv)
 {
-	(void) client, (void) params, (void) count;
-	logWarn("Unimplemented command: JOIN");
+	(void) client, (void) argc, (void) argv;
+	logWarn("Unimplemented command: USER");
+	sendReply(client, "Hello %d", 42);
 }
 
 /**
  * Handle a NICK message.
  */
-void Server::handleNick(Client& client, std::string_view* params, int count)
+void Server::handleNick(Client& client, int argc, char** argv)
 {
-	(void) client, (void) params, (void) count;
+	(void) client, (void) argc, (void) argv;
 	logWarn("Unimplemented command: NICK");
 }
 
 /**
  * Handle a PASS message.
  */
-void Server::handlePass(Client& client, std::string_view* params, int count)
+void Server::handlePass(Client& client, int argc, char** argv)
 {
-	(void) client, (void) params, (void) count;
+	(void) client, (void) argc, (void) argv;
 	logWarn("Unimplemented command: PASS");
 }
 
 /**
  * Handle a CAP message.
  */
-void Server::handleCap(Client& client, std::string_view* params, int count)
+void Server::handleCap(Client& client, int argc, char** argv)
 {
-	(void) client, (void) params, (void) count;
+	(void) client, (void) argc, (void) argv;
 	logWarn("Unimplemented command: CAP");
 }
 
 /**
  * Handle a JOIN message.
  */
-void Server::handleJoin(Client& client, std::string_view* params, int count)
+void Server::handleJoin(Client& client, int argc, char** argv)
 {
-	(void) client, (void) params, (void) count;
+	(void) client, (void) argc, (void) argv;
 	logWarn("Unimplemented command: JOIN");
 }
