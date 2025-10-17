@@ -229,7 +229,7 @@ void Server::parseMessage(Client& client, std::string message)
 		}
 
 		// Begin the next part at the end of this one.
-		begin = end;
+		begin = end + (end < message.length());
 	}
 
 	// Pass the message to its handler.
