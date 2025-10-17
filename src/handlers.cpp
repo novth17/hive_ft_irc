@@ -10,25 +10,26 @@ void Server::handleMessage(Client& client, std::string_view* params, int count)
 	if (count == 0)
 		return;
 
-	// Remove the command from the parameter array.
-	std::string_view cmd = params[0];
-	params++;
-	count--;
+	// Array of message handlers.
+	using Handler = void (Server::*)(Client&, std::string_view*, int);
+	static const std::pair<std::string_view, Handler> handlers[] = {
+		{"USER", &Server::handleUser},
+		{"NICK", &Server::handleNick},
+		{"PASS", &Server::handlePass},
+		{"CAP",  &Server::handleCap},
+		{"JOIN", &Server::handleJoin},
+	};
 
 	// Send the message to the handler for that command.
-	if (matchIgnoreCase(cmd, "USER"))
-		return handleUser(client, params, count);
-	if (matchIgnoreCase(cmd, "NICK"))
-		return handleNick(client, params, count);
-	if (matchIgnoreCase(cmd, "PASS"))
-		return handlePass(client, params, count);
-	if (matchIgnoreCase(cmd, "CAP"))
-		return handleCap(client, params, count);
-	if (matchIgnoreCase(cmd, "JOIN"))
-		return handleJoin(client, params, count);
+	std::string_view name = params[0];
+	for (const auto& [command, handler]: handlers) {
+		if (matchIgnoreCase(command, name)) {
+			return (this->*handler)(client, params + 1, count - 1);
+		}
+	}
 
 	// Log any unimplemented commands, so that they can be added eventually.
-	logError("Unimplemented command '%.*s'", int(cmd.size()), cmd.data());
+	logError("Unimplemented command '%.*s'", int(name.size()), name.data());
 }
 
 /**
