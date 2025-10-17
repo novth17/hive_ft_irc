@@ -76,7 +76,7 @@ void Server::eventLoop(const char* host, const char* port)
 				// Register the connection with epoll.
 				Client& client = _clients[clientFd];
 				client.socket = clientFd;
-				epollEvent.events = EPOLLIN;
+				epollEvent.events = EPOLLIN | EPOLLOUT;
 				epollEvent.data.fd = clientFd;
 				if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
 					throwf("Failed to add client socket to epoll: %s", strerror(errno));
@@ -136,6 +136,27 @@ void Server::receiveFromClient(Client& client)
 			}
 		}
 	}
+}
+
+void Server::sendReply(Client& client, const char* format, ...)
+{
+	// Get the length of the formatted string.
+	va_list args;
+	va_start(args, format);
+	int length = 1 + vsnprintf(nullptr, 0, format, args);
+	va_end(args);
+
+	// Get the actual formatted string.
+	va_start(args, format);
+	char buffer[length];
+	vsnprintf(buffer, length, format, args);
+	va_end(args);
+
+	// Send the formatted string with a line break at the end.
+	client.output.append(":server "); // Source.
+	client.output.append(buffer); // Contents of message.
+	client.output.append("\r\n"); // Line break.
+	sendToClient(client);
 }
 
 void Server::sendToClient(Client& client)

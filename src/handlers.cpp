@@ -38,7 +38,8 @@ void Server::handleMessage(Client& client, std::string_view* params, int count)
 void Server::handleUser(Client& client, std::string_view* params, int count)
 {
 	(void) client, (void) params, (void) count;
-	logWarn("Unimplemented command: JOIN");
+	logWarn("Unimplemented command: USER");
+	sendReply(client, "Hello %d", 42);
 }
 
 /**

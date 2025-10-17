@@ -57,6 +57,8 @@ private:
 
 	void receiveFromClient(Client& client);
 	void sendToClient(Client& client);
+
+	void sendReply(Client& client, const char* format, ...) CHECK_FORMAT(3);
 	
 	void parseMessage(Client& client, std::string_view message);
 	void handleMessage(Client& client, std::string_view* params, int count);
