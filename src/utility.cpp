@@ -1,10 +1,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
-
-#if __has_include("stdarg.h") // Not needed for compiling, just fixes LSP complaints
-# include <stdarg.h>
-#endif
-
+#include <stdarg.h>
 #include "irc.hpp"
 
 /**
