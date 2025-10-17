@@ -82,7 +82,7 @@ void Server::eventLoop(const char* host, const char* port)
 					throwf("Failed to add client socket to epoll: %s", strerror(errno));
 				logInfo("Client connected (fd = %d)", clientFd);
 
-			// Receive data from a client.
+			// Exchange data with a client.
 			} else {
 
 				// Find the Client object for this connection.
@@ -91,35 +91,71 @@ void Server::eventLoop(const char* host, const char* port)
 					throwf("Client for fd %d not found", fd);
 				Client& client = found->second;
 
-				// Receive data from the socket.
-				char buffer[512];
-				ssize_t bytesRead = recv(fd, buffer, sizeof(buffer), 0);
-
-				// Handle errors.
-				if (bytesRead == -1) {
-					throwf("Failed to receive from client: %s", strerror(errno));
-
-				// Handle client disconnection.
-				} else if (bytesRead == 0) {
-					logInfo("Client disconnected (fd = %d)", fd);
-					epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, nullptr);
-					_clients.erase(fd);
-					safeClose(fd);
-
-				// Buffer received data and check for complete messages.
-				} else {
-					std::string& input = client.input.append(buffer, bytesRead);
-					while (true) {
-						size_t newline = input.find("\r\n");
-						if (newline == input.npos)
-							break;
-						auto begin = input.begin();
-						auto end = input.begin() + newline;
-						parseMessage(client, std::string_view(begin, end));
-						input.erase(0, newline + 2);
-					}
-				}
+				// Exchange data with the client.
+				sendToClient(client);
+				receiveFromClient(client);
 			}
+		}
+	}
+}
+
+void Server::receiveFromClient(Client& client)
+{
+	// Receive data from the client.
+	char buffer[512];
+	ssize_t bytes = 1;
+	while (bytes > 0) {
+		bytes = recv(client.socket, buffer, sizeof(buffer), 0);
+
+		// Handle errors.
+		if (bytes == -1) {
+			if (errno == EAGAIN)
+				break; // Nothing more to read.
+			throwf("Failed to receive from client: %s", strerror(errno));
+
+		// Handle client disconnection.
+		} else if (bytes == 0) {
+			logInfo("Client disconnected (fd = %d)", client.socket);
+			epoll_ctl(_epollFd, EPOLL_CTL_DEL, client.socket, nullptr);
+			safeClose(client.socket);
+			_clients.erase(client.socket);
+
+		// Buffer received data.
+		} else {
+			std::string& input = client.input.append(buffer, bytes);
+
+			// Check for complete messages.
+			while (true) {
+				size_t newline = input.find("\r\n");
+				if (newline == input.npos)
+					break;
+				auto begin = input.begin();
+				auto end = input.begin() + newline;
+				parseMessage(client, std::string_view(begin, end));
+				input.erase(0, newline + 2);
+			}
+		}
+	}
+}
+
+void Server::sendToClient(Client& client)
+{
+	// Send data to the client.
+	ssize_t bytes = 1;
+	while (bytes > 0) {
+		char* buffer = client.output.data();
+		size_t length = client.output.size();
+		bytes = send(client.socket, buffer, length, 0);
+
+		// Handle errors.
+		if (bytes == -1) {
+			if (errno == EAGAIN)
+				break; // No more space for output.
+			throwf("Failed to send to client: %s", strerror(errno));
+
+		// Remove the sent data from the output buffer.
+		} else {
+			client.output.erase(0, bytes);
 		}
 	}
 }

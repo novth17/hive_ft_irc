@@ -54,6 +54,9 @@ private:
 	bool setNonBlocking(int fd);
 	void closeAndClean(const std::string& msg, int sockfd, struct addrinfo* result);
 	int  createListenSocket(const char* host, const char* port, bool isNonBlocking);
+
+	void receiveFromClient(Client& client);
+	void sendToClient(Client& client);
 	
 	void parseMessage(Client& client, std::string_view message);
 	void handleMessage(Client& client, std::string_view* params, int count);
