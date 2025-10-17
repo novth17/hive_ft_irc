@@ -235,3 +235,27 @@ void Server::parseMessage(Client& client, std::string message)
 	// Pass the message to its handler.
 	handleMessage(client, argc, argv);
 }
+
+/**
+ * Find a specific client by their nickname. Returns a null pointer if there's
+ * no client by that nickname.
+ */
+Client* Server::findClientByName(std::string_view name)
+{
+	for (auto& [fd, client]: _clients)
+		if (client.nick == name)
+			return &client;
+	return nullptr;
+}
+
+/**
+ * Find a specific channel by its name. Returns a null pointer if there's no
+ * channel by that name.
+ */
+Channel* Server::findChannelByName(std::string_view name)
+{
+	for (auto& [channelName, channel]: _channels)
+		if (channel.name == name)
+			return &channel;
+	return nullptr;
+}

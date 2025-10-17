@@ -38,7 +38,6 @@ void Server::handleUser(Client& client, int argc, char** argv)
 {
 	(void) client, (void) argc, (void) argv;
 	logWarn("Unimplemented command: USER");
-	sendReply(client, "Hello %d", 42);
 }
 
 /**
@@ -68,11 +67,75 @@ void Server::handleCap(Client& client, int argc, char** argv)
 	logWarn("Unimplemented command: CAP");
 }
 
+bool isValidChannelName(const char* name)
+{
+	if (*name == '\0' || (*name != '#' && *name != '&'))
+		return false;
+	for (; *name != '\0'; name++)
+		if (*name == ' ' || *name == ',' || *name == '\a')
+			return false;
+	return true;
+}
+
 /**
  * Handle a JOIN message.
  */
 void Server::handleJoin(Client& client, int argc, char** argv)
 {
-	(void) client, (void) argc, (void) argv;
-	logWarn("Unimplemented command: JOIN");
+	// Check that we have enough parameters.
+	const char* nick = client.nick.c_str();
+	if (argc < 1 || argc > 2)
+		return sendReply(client, "461 %s JOIN :Not enough parameters", nick);
+
+	// Join a list of channels.
+	if (argc == 1 || argc == 2) {
+		char noKeys = '\0';
+		char* name = argv[0];
+		char* key = argc >= 2 ? argv[1] : &noKeys;
+		while (*name != '\0') {
+
+			// Get the next channel name and key in the comma-separated list.
+			int name_length = strcspn(name, ",");
+			int key_length = strcspn(key, ",");
+			if (name[name_length] == ',')
+				name[name_length++] = '\0';
+			if (key[key_length] == ',')
+				key[key_length++] = '\0';
+
+			// Check that a valid channel name was given.
+			if (!isValidChannelName(name)) {
+				sendReply(client, "403 %s %s :No such channel", nick, name);
+
+			// If there's no channel by that name, create it.
+			} else {
+				Channel* channel = findChannelByName(name);
+				if (channel == nullptr) {
+					logInfo("Creating new channel '%s'", name);
+					channel = &_channels[name]; // Makes a new empty channel.
+					channel->name = name;
+				}
+
+				// Only continue if the client is not already in the channel.
+				if (channel->members.find(nick) == channel->members.end()) {
+
+					// Stop if the key didn't match.
+					if (channel->key != key) {
+						sendReply(client, "%s %s :Cannot join channel (+k)", nick, name);
+
+					// Otherwise, join the channel.
+					} else {
+						const char* topic = channel->topic.c_str();
+						logInfo("%s joined channel %s", nick, name);
+						channel->members[nick] = &client;
+						sendReply(client, ":%s JOIN %s", nick, name);
+						sendReply(client, "332 %s %s :%s", nick, name, topic);
+						// TODO: Reply with list of channel users.
+					}
+				}
+			}
+
+			name += name_length;
+			key += key_length;
+		}
+	}
 }

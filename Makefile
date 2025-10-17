@@ -44,6 +44,9 @@ leaks: all
 irssi:
 	irssi -c localhost -w secret
 
-.PHONY: all clean fclean re test leaks irssi
+nc:
+	nc -C localhost 6667
+
+.PHONY: all clean fclean re test leaks irssi nc
 .SECONDARY: $(OBJ)
 -include $(DEP)

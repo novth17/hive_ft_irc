@@ -37,8 +37,10 @@ struct Client
 
 struct Channel
 {
-	std::string name;	// The name of the channel.
-	std::string topic;	// The current topic for the channel.
+	std::string name;						// The name of the channel.
+	std::string topic;						// The current topic.
+	std::string key;						// Key needed to join the channel.
+	std::map<std::string, Client*> members;	// Clients joined to this channel.
 };
 
 class Server
@@ -68,6 +70,10 @@ private:
 	void handlePass(Client& client, int argc, char** argv);
 	void handleCap(Client& client, int argc, char** argv);
 	void handleJoin(Client& client, int argc, char** argv);
+
+	// Find entities by name.
+	Client* findClientByName(std::string_view name);
+	Channel* findChannelByName(std::string_view name);
 
 	const char* _port = nullptr;
 	const char* _password = nullptr;
