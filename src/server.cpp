@@ -76,7 +76,7 @@ void Server::eventLoop(const char* host, const char* port)
 				// Register the connection with epoll.
 				Client& client = _clients[clientFd];
 				client.socket = clientFd;
-				epollEvent.events = EPOLLIN | EPOLLOUT;
+				epollEvent.events = EPOLLIN | EPOLLOUT | EPOLLET;
 				epollEvent.data.fd = clientFd;
 				if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
 					throwf("Failed to add client socket to epoll: %s", strerror(errno));
