@@ -37,18 +37,18 @@ void Server::eventLoop(const char* host, const char* port)
 	// Create listen socket.
 	_serverFd = createListenSocket(host, port, true);
 	if (_serverFd == -1)
-		throwf("Failed to create server socket: %s", strerror(errno));
+		fail("Failed to create server socket: ", strerror(errno));
 
 	// Create epoll instance for serverFD.
 	_epollFd = epoll_create1(0);
 	if (_epollFd == -1)
-		throwf("Failed to create epoll instance: %s", strerror(errno));
+		fail("Failed to create epoll instance: ", strerror(errno));
 
 	// Add server fd socket to epoll.
 	epollEvent.events = EPOLLIN;
 	epollEvent.data.fd = _serverFd;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _serverFd, &epollEvent) == -1)
-		throwf("Failed to add server socket to epoll: %s", strerror(errno));
+		fail("Failed to add server socket to epoll: ", strerror(errno));
 
 	// Begin the event loop.
 	logInfo("Listening on port ", _port);
@@ -62,7 +62,7 @@ void Server::eventLoop(const char* host, const char* port)
 				logInfo("Interrupted by user");
 				break;
 			}
-			throwf("Failed to wait for events: %s", strerror(errno));
+			fail("Failed to wait for events: ", strerror(errno));
 		}
 
 		// Loop over pending events.
@@ -77,7 +77,7 @@ void Server::eventLoop(const char* host, const char* port)
 				socklen_t clientAddressLength = sizeof(clientAddress);
 				int clientFd = accept(_serverFd, (struct sockaddr*)&clientAddress, &clientAddressLength);
 				if (clientFd == -1)
-					throwf("Failed to accept connection: %s", strerror(errno));
+					fail("Failed to accept connection: ", strerror(errno));
 				setNonBlocking(clientFd);
 
 				// Register the connection with epoll.
@@ -86,7 +86,7 @@ void Server::eventLoop(const char* host, const char* port)
 				epollEvent.events = EPOLLIN | EPOLLOUT | EPOLLET;
 				epollEvent.data.fd = clientFd;
 				if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
-					throwf("Failed to add client socket to epoll: %s", strerror(errno));
+					fail("Failed to add client socket to epoll: ", strerror(errno));
 				logInfo("Client connected (fd = ", clientFd, ")");
 
 			// Exchange data with a client.
@@ -95,7 +95,7 @@ void Server::eventLoop(const char* host, const char* port)
 				// Find the Client object for this connection.
 				auto found = _clients.find(fd);
 				if (found == _clients.end())
-					throwf("Client for fd %d not found", fd);
+					fail("Client for fd ", fd, " not found");
 				Client& client = found->second;
 
 				// Exchange data with the client.
@@ -118,7 +118,7 @@ void Server::receiveFromClient(Client& client)
 		if (bytes == -1) {
 			if (errno == EAGAIN)
 				break; // Nothing more to read.
-			throwf("Failed to receive from client: %s", strerror(errno));
+			fail("Failed to receive from client: ", strerror(errno));
 
 		// Handle client disconnection.
 		} else if (bytes == 0) {

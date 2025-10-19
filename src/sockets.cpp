@@ -44,7 +44,7 @@ int Server::createListenSocket(const char* host, const char* port, bool isNonBlo
 
 	int status = getaddrinfo(host, port, &hints, &result);
 	if (status != 0)
-		throwf("getaddrinfo failed: %s", gai_strerror(status));
+		fail("getaddrinfo failed: ", gai_strerror(status));
 
 	// Single IPv4 result
 	//socketsetup()

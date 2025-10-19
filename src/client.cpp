@@ -18,7 +18,7 @@ void Client::send(const std::string_view& string)
 		if (bytes == -1) {
 			if (errno == EAGAIN)
 				break;
-			throwf("Failed to send to client: %s", strerror(errno));
+			fail("Failed to send to client: ", strerror(errno));
 		}
 		output.erase(0, bytes);
 	}

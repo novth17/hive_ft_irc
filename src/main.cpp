@@ -37,6 +37,6 @@ int main(int argc, char** argv)
 		Server server(argv[1], argv[2]);
 		server.eventLoop(NULL, argv[1]);
 	} catch (std::exception& error) {
-		logError("Unhandled exception: %s", error.what());
+		logError("Unhandled exception: ", error.what());
 	}
 }
