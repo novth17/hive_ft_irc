@@ -64,3 +64,16 @@ void logError(const Arguments&... arguments)
 		logError("Reason for failure: ", __VA_ARGS__); \
 		throw std::runtime_error("fail() was called"); \
 	} while (false)
+
+/**
+ * Assert some condition, and throw an exception if it's not true. The error
+ * messages includes some information about the condition, the function, file
+ * and line number where the assertion failed.
+ */
+#define assert(condition) do { \
+		if (!(condition)) { \
+			logError("Assertion failed in ", __func__, " (", __FILE__, ":", __LINE__, ")"); \
+			logError("Condition: assert(", #condition, ")"); \
+			throw std::runtime_error("assertion failed"); \
+		} \
+	} while (false)
