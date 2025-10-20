@@ -6,18 +6,19 @@
 #include "channel.hpp"
 #include "client.hpp"
 #include "irc.hpp"
+#include "log.hpp"
 #include "server.hpp"
 #include "utility.hpp"
 
 Server::Server(const char* port, const char* password)
 	: port(port), password(password)
 {
-	logInfo("Starting server with password ", password);
+	log::info("Starting server with password ", password);
 }
 
 Server::~Server()
 {
-	logInfo("Closing connection");
+	log::info("Closing connection");
 	for (const auto& [fd, client]: clients)
 		close(fd);
 	safeClose(serverFd);
@@ -51,7 +52,7 @@ void Server::eventLoop(const char* host, const char* port)
 		fail("Failed to add server socket to epoll: ", strerror(errno));
 
 	// Begin the event loop.
-	logInfo("Listening on port ", port);
+	log::info("Listening on port ", port);
 	while (true) {
 
 		// Poll available events.
@@ -59,7 +60,7 @@ void Server::eventLoop(const char* host, const char* port)
 		if (numberOfReadyEvents == -1) {
 			if (errno == EINTR) {
 				fprintf(stderr, "\r"); // Just to avoid printing ^C.
-				logInfo("Interrupted by user");
+				log::info("Interrupted by user");
 				break;
 			}
 			fail("Failed to wait for events: ", strerror(errno));
@@ -88,7 +89,7 @@ void Server::eventLoop(const char* host, const char* port)
 				epollEvent.data.fd = clientFd;
 				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
 					fail("Failed to add client socket to epoll: ", strerror(errno));
-				logInfo("Client connected (fd = ", clientFd, ")");
+				log::info("Client connected (fd = ", clientFd, ")");
 
 			// Exchange data with a client.
 			} else {
@@ -123,7 +124,7 @@ void Server::receiveFromClient(Client& client)
 
 		// Handle client disconnection.
 		} else if (bytes == 0) {
-			logInfo("Client disconnected (fd = ", client.socket, ")");
+			log::info("Client disconnected (fd = ", client.socket, ")");
 			epoll_ctl(epollFd, EPOLL_CTL_DEL, client.socket, nullptr);
 			safeClose(client.socket);
 			clients.erase(client.socket);
@@ -175,7 +176,7 @@ void Server::parseMessage(Client& client, std::string message)
 
 			// Issue a warning if there are too many parts.
 			if (argc == MAX_MESSAGE_PARTS) {
-				logWarn("Message has too many parts:", message);
+				log::warn("Message has too many parts:", message);
 				return;
 			}
 
@@ -227,7 +228,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 	}
 
 	// Log any unimplemented commands, so that they can be added eventually.
-	logError("Unimplemented command: ", argv[0]);
+	log::error("Unimplemented command: ", argv[0]);
 }
 
 /**
@@ -239,7 +240,7 @@ Channel* Server::findChannelByName(std::string_view name)
 	for (auto& [channelName, channel]: channels)
 		if (channel.name == name)
 			return &channel;
-	logWarn("Channel ", name, " not found");
+	log::warn("Channel ", name, " not found");
 	return nullptr;
 }
 
@@ -248,7 +249,7 @@ Channel* Server::findChannelByName(std::string_view name)
  */
 Channel* Server::newChannel(const std::string& name)
 {
-	logInfo("Creating new channel ", name);
+	log::info("Creating new channel ", name);
 	Channel* channel = &channels[name];
 	channel->server = this;
 	channel->name = name;
@@ -264,6 +265,6 @@ Client* Server::findClientByName(std::string_view name)
 	for (auto& [fd, client]: clients)
 		if (client.nick == name)
 			return &client;
-	logWarn("Client ", name, " not found");
+	log::warn("Client ", name, " not found");
 	return nullptr;
 }

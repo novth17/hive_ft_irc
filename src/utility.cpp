@@ -17,15 +17,6 @@ void safeClose(int& fd)
 }
 
 /**
- * Print a string to standard output. This function is ultimately called by all
- * the other variants of the log() function.
- */
-void log(const std::string_view& string)
-{
-	std::cout << string;
-}
-
-/**
   * Check if two null-terminated strings match, ignoring lower/upper case.
   */
 bool matchIgnoreCase(const char* a, const char* b)

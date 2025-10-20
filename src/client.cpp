@@ -4,6 +4,7 @@
 #include "channel.hpp"
 #include "client.hpp"
 #include "irc.hpp"
+#include "log.hpp"
 #include "server.hpp"
 #include "utility.hpp"
 
@@ -32,7 +33,7 @@ void Client::send(const std::string_view& string)
 void Client::handleUser(int argc, char** argv)
 {
 	(void) argc, (void) argv;
-	logWarn("Unimplemented command: USER");
+	log::warn("Unimplemented command: USER");
 }
 
 /**
@@ -41,7 +42,7 @@ void Client::handleUser(int argc, char** argv)
 void Client::handleNick(int argc, char** argv)
 {
 	(void) argc, (void) argv;
-	logWarn("Unimplemented command: NICK");
+	log::warn("Unimplemented command: NICK");
 }
 
 /**
@@ -50,7 +51,7 @@ void Client::handleNick(int argc, char** argv)
 void Client::handlePass(int argc, char** argv)
 {
 	(void) argc, (void) argv;
-	logWarn("Unimplemented command: PASS");
+	log::warn("Unimplemented command: PASS");
 }
 
 /**
@@ -59,7 +60,7 @@ void Client::handlePass(int argc, char** argv)
 void Client::handleCap(int argc, char** argv)
 {
 	(void) argc, (void) argv;
-	logWarn("Unimplemented command: CAP");
+	log::warn("Unimplemented command: CAP");
 }
 
 /**
@@ -129,11 +130,11 @@ void Client::joinChannel(Channel* channel)
 	assert(channel != nullptr);
 	assert(channels.contains(channel) == !!channel->findClientByName(nick));
 	if (channels.contains(channel)) {
-		logWarn(nick, " is already in channel ", channel->name);
+		log::warn(nick, " is already in channel ", channel->name);
 	} else {
 		channel->members.insert(this);
 		channels.insert(channel);
-		logInfo(nick, " was added to channel ", channel->name);
+		log::info(nick, " was added to channel ", channel->name);
 	}
 	assert(channels.find(channel) != channels.end());
 	assert(channel->findClientByName(nick) == this);
@@ -150,9 +151,9 @@ void Client::leaveChannel(Channel* channel)
 	if (channels.contains(channel)) {
 		channel->members.erase(this);
 		channels.erase(channel);
-		logInfo(nick, " was removed from channel ", channel->name);
+		log::info(nick, " was removed from channel ", channel->name);
 	} else {
-		logWarn(nick, " is already in channel ", channel->name);
+		log::warn(nick, " is already in channel ", channel->name);
 	}
 	assert(channels.find(channel) == channels.end());
 	assert(channel->findClientByName(nick) == nullptr);

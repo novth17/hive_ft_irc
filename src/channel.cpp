@@ -1,6 +1,6 @@
 #include "channel.hpp"
 #include "client.hpp"
-#include "utility.hpp"
+#include "log.hpp"
 
 /**
  * Determine if a string contains a valid channel name. A channel must start
@@ -26,6 +26,6 @@ Client* Channel::findClientByName(std::string_view nick)
 	for (Client* client: members)
 		if (client->nick == nick)
 			return client;
-	logWarn("Client ", nick, " was not found in channel ", name);
+	log::warn("Client ", nick, " was not found in channel ", name);
 	return nullptr;
 }
