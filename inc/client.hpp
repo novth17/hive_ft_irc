@@ -1,21 +1,27 @@
 #pragma once
 
+#include <set>
 #include <string>
 #include <string_view>
 
+class Channel;
 class Server;
 
 class Client
 {
 public:
-	int socket = -1;			// The socket used for the client's connection
-	std::string nick;			// The client's nickname
-	std::string user;			// The client's user name
-	std::string input;			// Buffered data from recv()
-	std::string output;			// Buffered data for send()
-	std::string prefix;			// Prefix symbol (either "" or "@")
-	bool isRegistered = false;	// Whether the client completed registration.
-	Server* server = nullptr;	// Pointer to the server object.
+	int socket = -1;				// The socket used for the client's connection
+	std::string nick;				// The client's nickname
+	std::string user;				// The client's user name
+	std::string input;				// Buffered data from recv()
+	std::string output;				// Buffered data for send()
+	std::string prefix;				// Prefix symbol (either "" or "@")
+	bool isRegistered = false;		// Whether the client completed registration.
+	Server* server = nullptr;		// Pointer to the server object.
+	std::set<Channel*>	channels;	// All channels the client is joined to.
+
+	void joinChannel(Channel* channel);
+	void leaveChannel(Channel* channel);
 
 	void handleUser(int argc, char** argv);
 	void handleNick(int argc, char** argv);

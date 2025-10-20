@@ -97,7 +97,7 @@ void Client::handleJoin(int argc, char** argv)
 			channel = server->newChannel(name);
 
 		// Skip if the client is already in the channel.
-		if (channel->members.find(nick) != channel->members.end())
+		if (channel->findClientByName(nick) != nullptr)
 			continue;
 
 		// Issue an error message if the key doesn't match.
@@ -107,16 +107,53 @@ void Client::handleJoin(int argc, char** argv)
 		}
 
 		// Join the channel.
-		logInfo(nick, " joined channel ", name);
-		channel->members[nick] = this;
+		joinChannel(channel);
 
 		// Send a join message, the topic, and a list of channel members.
 		sendLine(":", nick, " JOIN ", name);
 		sendLine("332 ", nick, " ", name, " :", channel->topic);
 		send("353 ", nick, " ", channel->symbol, " ", name, " :");
-		for (auto& [_, member]: channel->members)
+		for (Client* member: channel->members)
 			send(member->prefix, member->nick, " ");
 		sendLine(); // Line break at the end of the member list.
 		sendLine("366 ", nick, " ", name, " :End of /NAMES list");
 	}
+}
+
+/**
+ * Makes a client a member of a channel without checking for authorization. Does
+ * nothing if the client is already joined to the channel.
+ */
+void Client::joinChannel(Channel* channel)
+{
+	assert(channel != nullptr);
+	assert(channels.contains(channel) == !!channel->findClientByName(nick));
+	if (channels.contains(channel)) {
+		logWarn(nick, " is already in channel ", channel->name);
+	} else {
+		channel->members.insert(this);
+		channels.insert(channel);
+		logInfo(nick, " was added to channel ", channel->name);
+	}
+	assert(channels.find(channel) != channels.end());
+	assert(channel->findClientByName(nick) == this);
+}
+
+/**
+ * Makes a client no longer a member of of a channel. Does nothing if the client
+ * is not a member of the channel.
+ */
+void Client::leaveChannel(Channel* channel)
+{
+	assert(channel != nullptr);
+	assert(channels.contains(channel) == !!channel->findClientByName(nick));
+	if (channels.contains(channel)) {
+		channel->members.erase(this);
+		channels.erase(channel);
+		logInfo(nick, " was removed from channel ", channel->name);
+	} else {
+		logWarn(nick, " is already in channel ", channel->name);
+	}
+	assert(channels.find(channel) == channels.end());
+	assert(channel->findClientByName(nick) == nullptr);
 }
