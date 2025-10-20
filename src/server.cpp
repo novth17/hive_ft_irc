@@ -10,18 +10,18 @@
 #include "utility.hpp"
 
 Server::Server(const char* port, const char* password)
-	: _port(port), _password(password)
+	: port(port), password(password)
 {
-	logInfo("Starting server with password ", _password);
+	logInfo("Starting server with password ", password);
 }
 
 Server::~Server()
 {
 	logInfo("Closing connection");
-	for (const auto& [fd, client]: _clients)
+	for (const auto& [fd, client]: clients)
 		close(fd);
-	safeClose(_serverFd);
-	safeClose(_epollFd);
+	safeClose(serverFd);
+	safeClose(epollFd);
 }
 
 void Server::eventLoop(const char* host, const char* port)
@@ -35,27 +35,27 @@ void Server::eventLoop(const char* host, const char* port)
 	struct epoll_event epollEvent, events[MAX_EVENTS];
 
 	// Create listen socket.
-	_serverFd = createListenSocket(host, port, true);
-	if (_serverFd == -1)
+	serverFd = createListenSocket(host, port, true);
+	if (serverFd == -1)
 		fail("Failed to create server socket: ", strerror(errno));
 
 	// Create epoll instance for serverFD.
-	_epollFd = epoll_create1(0);
-	if (_epollFd == -1)
+	epollFd = epoll_create1(0);
+	if (epollFd == -1)
 		fail("Failed to create epoll instance: ", strerror(errno));
 
 	// Add server fd socket to epoll.
 	epollEvent.events = EPOLLIN;
-	epollEvent.data.fd = _serverFd;
-	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, _serverFd, &epollEvent) == -1)
+	epollEvent.data.fd = serverFd;
+	if (epoll_ctl(epollFd, EPOLL_CTL_ADD, serverFd, &epollEvent) == -1)
 		fail("Failed to add server socket to epoll: ", strerror(errno));
 
 	// Begin the event loop.
-	logInfo("Listening on port ", _port);
+	logInfo("Listening on port ", port);
 	while (true) {
 
 		// Poll available events.
-		int numberOfReadyEvents = epoll_wait(_epollFd, events, MAX_EVENTS, -1);
+		int numberOfReadyEvents = epoll_wait(epollFd, events, MAX_EVENTS, -1);
 		if (numberOfReadyEvents == -1) {
 			if (errno == EINTR) {
 				fprintf(stderr, "\r"); // Just to avoid printing ^C.
@@ -70,23 +70,23 @@ void Server::eventLoop(const char* host, const char* port)
 			int fd = events[i].data.fd;
 
 			// Accept a new client.
-			if (fd == _serverFd) {
+			if (fd == serverFd) {
 
 				// Open a new client connection.
 				sockaddr_in clientAddress;
 				socklen_t clientAddressLength = sizeof(clientAddress);
-				int clientFd = accept(_serverFd, (struct sockaddr*)&clientAddress, &clientAddressLength);
+				int clientFd = accept(serverFd, (struct sockaddr*)&clientAddress, &clientAddressLength);
 				if (clientFd == -1)
 					fail("Failed to accept connection: ", strerror(errno));
 				setNonBlocking(clientFd);
 
 				// Register the connection with epoll.
-				Client& client = _clients[clientFd];
+				Client& client = clients[clientFd];
 				client.server = this;
 				client.socket = clientFd;
 				epollEvent.events = EPOLLIN | EPOLLOUT | EPOLLET;
 				epollEvent.data.fd = clientFd;
-				if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
+				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
 					fail("Failed to add client socket to epoll: ", strerror(errno));
 				logInfo("Client connected (fd = ", clientFd, ")");
 
@@ -94,8 +94,8 @@ void Server::eventLoop(const char* host, const char* port)
 			} else {
 
 				// Find the Client object for this connection.
-				auto found = _clients.find(fd);
-				if (found == _clients.end())
+				auto found = clients.find(fd);
+				if (found == clients.end())
 					fail("Client for fd ", fd, " not found");
 				Client& client = found->second;
 
@@ -124,9 +124,9 @@ void Server::receiveFromClient(Client& client)
 		// Handle client disconnection.
 		} else if (bytes == 0) {
 			logInfo("Client disconnected (fd = ", client.socket, ")");
-			epoll_ctl(_epollFd, EPOLL_CTL_DEL, client.socket, nullptr);
+			epoll_ctl(epollFd, EPOLL_CTL_DEL, client.socket, nullptr);
 			safeClose(client.socket);
-			_clients.erase(client.socket);
+			clients.erase(client.socket);
 
 		// Buffer received data.
 		} else {
@@ -236,7 +236,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
  */
 Channel* Server::findChannelByName(std::string_view name)
 {
-	for (auto& [channelName, channel]: _channels)
+	for (auto& [channelName, channel]: channels)
 		if (channel.name == name)
 			return &channel;
 	logWarn("Channel ", name, " not found");
@@ -249,7 +249,7 @@ Channel* Server::findChannelByName(std::string_view name)
 Channel* Server::newChannel(const std::string& name)
 {
 	logInfo("Creating new channel ", name);
-	Channel* channel = &_channels[name];
+	Channel* channel = &channels[name];
 	channel->server = this;
 	channel->name = name;
 	return channel;
@@ -261,7 +261,7 @@ Channel* Server::newChannel(const std::string& name)
  */
 Client* Server::findClientByName(std::string_view name)
 {
-	for (auto& [fd, client]: _clients)
+	for (auto& [fd, client]: clients)
 		if (client.nick == name)
 			return &client;
 	logWarn("Client ", name, " not found");

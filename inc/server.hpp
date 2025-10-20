@@ -34,10 +34,10 @@ private:
 	void handleCap(Client& client, int argc, char** argv);
 	void handleJoin(Client& client, int argc, char** argv);
 
-	int _serverFd = -1;
-	int _epollFd = -1;
-	std::string _port;
-	std::string _password;
-	std::map<int, Client> _clients;
-	std::map<std::string, Channel> _channels;
+	int serverFd = -1;
+	int epollFd = -1;
+	std::string port;
+	std::string password;
+	std::map<int, Client> clients;
+	std::map<std::string, Channel> channels;
 };
