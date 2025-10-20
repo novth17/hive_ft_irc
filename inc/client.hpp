@@ -13,6 +13,7 @@ public:
 	int socket = -1;				// The socket used for the client's connection
 	std::string nick;				// The client's nickname
 	std::string user;				// The client's user name
+	bool authorized = false;		// Whether the client gave the correct password
 	std::string input;				// Buffered data from recv()
 	std::string output;				// Buffered data for send()
 	std::string prefix;				// Prefix symbol (either "" or "@")
