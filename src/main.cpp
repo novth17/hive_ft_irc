@@ -6,8 +6,8 @@
 #include <string>
 
 #include "irc.hpp"
+#include "log.hpp"
 #include "server.hpp"
-#include "utility.hpp"
 
 int main(int argc, char** argv)
 {
@@ -37,6 +37,6 @@ int main(int argc, char** argv)
 		Server server(argv[1], argv[2]);
 		server.eventLoop(NULL, argv[1]);
 	} catch (std::exception& error) {
-		logError("Unhandled exception: ", error.what());
+		log::error("Unhandled exception: ", error.what());
 	}
 }

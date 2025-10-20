@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "irc.hpp"
+#include "log.hpp"
 #include "server.hpp"
 #include "utility.hpp"
 
@@ -60,7 +61,7 @@ int Server::createListenSocket(const char* host, const char* port, bool isNonBlo
 
 	//socketbind()
 	if (bind(sockfd, result->ai_addr, result->ai_addrlen) < 0) {
-		logError("bind failed: %s", strerror(errno));
+		log::error("bind failed: %s", strerror(errno));
 		closeAndClean("Failed to bind socket", sockfd, result);
 	}
 	if (listen(sockfd, MAX_BACKLOG) < 0)
