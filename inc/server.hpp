@@ -16,6 +16,7 @@ public:
 	Client* findClientByName(std::string_view name);
 	Channel* newChannel(const std::string& name);
 	void eventLoop(const char* host, const char* port);
+	bool correctPassword(std::string_view pass);
 
 private:
 	bool setNonBlocking(int fd);

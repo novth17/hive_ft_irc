@@ -231,6 +231,11 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 	log::error("Unimplemented command: ", argv[0]);
 }
 
+bool Server::correctPassword(std::string_view pass)
+{
+	return password == pass;
+}
+
 /**
  * Find a specific channel by its name. Returns a null pointer if there's no
  * channel by that name.
