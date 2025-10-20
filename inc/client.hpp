@@ -3,6 +3,8 @@
 #include <string>
 #include <string_view>
 
+class Server;
+
 class Client
 {
 public:
@@ -13,6 +15,13 @@ public:
 	std::string output;			// Buffered data for send()
 	std::string prefix;			// Prefix symbol (either "" or "@")
 	bool isRegistered = false;	// Whether the client completed registration.
+	Server* server = nullptr;	// Pointer to the server object.
+
+	void handleUser(int argc, char** argv);
+	void handleNick(int argc, char** argv);
+	void handlePass(int argc, char** argv);
+	void handleCap(int argc, char** argv);
+	void handleJoin(int argc, char** argv);
 
 	// Send a string to the client.
 	void send(const std::string_view& string);

@@ -82,6 +82,7 @@ void Server::eventLoop(const char* host, const char* port)
 
 				// Register the connection with epoll.
 				Client& client = _clients[clientFd];
+				client.server = this;
 				client.socket = clientFd;
 				epollEvent.events = EPOLLIN | EPOLLOUT | EPOLLET;
 				epollEvent.data.fd = clientFd;
@@ -199,15 +200,34 @@ void Server::parseMessage(Client& client, std::string message)
 }
 
 /**
- * Find a specific client by their nickname. Returns a null pointer if there's
- * no client by that nickname.
+ * Handle any type of message. Removes the command from the parameter list, then
+ * calls the handler for that command with the remaining parameters.
  */
-Client* Server::findClientByName(std::string_view name)
+void Server::handleMessage(Client& client, int argc, char** argv)
 {
-	for (auto& [fd, client]: _clients)
-		if (client.nick == name)
-			return &client;
-	return nullptr;
+	// Ignore empty messages.
+	if (argc == 0)
+		return;
+
+	// Array of message handlers.
+	using Handler = void (Client::*)(int, char**);
+	static const std::pair<const char*, Handler> handlers[] = {
+		{"USER", &Client::handleUser},
+		{"NICK", &Client::handleNick},
+		{"PASS", &Client::handlePass},
+		{"CAP",  &Client::handleCap},
+		{"JOIN", &Client::handleJoin},
+	};
+
+	// Send the message to the handler for that command.
+	for (const auto& [command, handler]: handlers) {
+		if (matchIgnoreCase(command, argv[0])) {
+			return (client.*handler)(argc - 1, argv + 1);
+		}
+	}
+
+	// Log any unimplemented commands, so that they can be added eventually.
+	logError("Unimplemented command: ", argv[0]);
 }
 
 /**
@@ -219,5 +239,31 @@ Channel* Server::findChannelByName(std::string_view name)
 	for (auto& [channelName, channel]: _channels)
 		if (channel.name == name)
 			return &channel;
+	logWarn("Channel ", name, " not found");
+	return nullptr;
+}
+
+/**
+ * Create a new empty channel and set its name.
+ */
+Channel* Server::newChannel(const std::string& name)
+{
+	logInfo("Creating new channel ", name);
+	Channel* channel = &_channels[name];
+	channel->server = this;
+	channel->name = name;
+	return channel;
+}
+
+/**
+ * Find a specific client by their nickname. Returns a null pointer if there's
+ * no client by that nickname.
+ */
+Client* Server::findClientByName(std::string_view name)
+{
+	for (auto& [fd, client]: _clients)
+		if (client.nick == name)
+			return &client;
+	logWarn("Client ", name, " not found");
 	return nullptr;
 }

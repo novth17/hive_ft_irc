@@ -4,6 +4,7 @@
 #include <string>
 
 class Client;
+class Server;
 
 class Channel
 {
@@ -14,6 +15,7 @@ public:
 	std::string topic;						// The current topic
 	std::string key;						// Key needed to join the channel
 	std::map<std::string, Client*> members;	// Clients joined to this channel
+	Server* server = nullptr;				// Pointer to the server object.
 
 	static bool isValidName(const char* name);
 };

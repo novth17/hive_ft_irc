@@ -12,6 +12,9 @@ public:
 	Server(const char* port, const char* password);
 	~Server();
 
+	Channel* findChannelByName(std::string_view name);
+	Client* findClientByName(std::string_view name);
+	Channel* newChannel(const std::string& name);
 	void eventLoop(const char* host, const char* port);
 
 private:
@@ -30,10 +33,6 @@ private:
 	void handlePass(Client& client, int argc, char** argv);
 	void handleCap(Client& client, int argc, char** argv);
 	void handleJoin(Client& client, int argc, char** argv);
-
-	// Find entities by name.
-	Client* findClientByName(std::string_view name);
-	Channel* findChannelByName(std::string_view name);
 
 	int _serverFd = -1;
 	int _epollFd = -1;
