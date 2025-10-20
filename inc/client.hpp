@@ -28,6 +28,7 @@ public:
 	void handleNick(int argc, char** argv);
 	void handlePass(int argc, char** argv);
 	void handleCap(int argc, char** argv);
+	void handlePart(int argc, char** argv);
 	void handleJoin(int argc, char** argv);
 
 	// Send a string to the client.

@@ -217,6 +217,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 		{"NICK", &Client::handleNick},
 		{"PASS", &Client::handlePass},
 		{"CAP",  &Client::handleCap},
+		{"PART", &Client::handlePart},
 		{"JOIN", &Client::handleJoin},
 	};
 
