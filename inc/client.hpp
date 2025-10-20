@@ -30,6 +30,7 @@ public:
 	void handleCap(int argc, char** argv);
 	void handlePart(int argc, char** argv);
 	void handleJoin(int argc, char** argv);
+	void handlePing(int argc, char** argv);
 
 	// Send a string to the client.
 	void send(const std::string_view& string);

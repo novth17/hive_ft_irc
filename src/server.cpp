@@ -219,6 +219,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 		{"CAP",  &Client::handleCap},
 		{"PART", &Client::handlePart},
 		{"JOIN", &Client::handleJoin},
+		{"PING", &Client::handlePing},
 	};
 
 	// Send the message to the handler for that command.

@@ -170,6 +170,19 @@ void Client::handleJoin(int argc, char** argv)
 }
 
 /**
+ * Handle a PING message.
+ */
+void Client::handlePing(int argc, char** argv)
+{
+	// Check that enough parameters were provided.
+	if (argc != 1)
+		return sendLine("461 ", nick, " JOIN :Not enough parameters");
+
+	// Send the token back to the client in a PONG message.
+	sendLine(":localhost PONG :", argv[0]); // FIXME: What should the source be?
+}
+
+/**
  * Makes a client a member of a channel without checking for authorization. Does
  * nothing if the client is already joined to the channel.
  */
