@@ -18,11 +18,12 @@ public:
 	std::string input;				// Buffered data from recv()
 	std::string output;				// Buffered data for send()
 	std::string prefix;				// Prefix symbol (either "" or "@")
-	bool isRegistered = false;		// Whether the client completed registration
+	std::string modes;				// Mode string
+	bool isRegistered = false;		// Whether the client completed registration.
 	bool isPassValid = false;		// Whether the client gave the correct password
 	bool isDisconnected = false;	// Set to true when the client is disconnected
-	Server* server = nullptr;		// Pointer to the server object
-	std::set<Channel*>	channels;	// All channels the client is joined to
+	Server* server = nullptr;		// Pointer to the server object.
+	std::set<Channel*>	channels;	// All channels the client is joined to.
 
 	void joinChannel(Channel* channel);
 	void leaveChannel(Channel* channel);
@@ -36,6 +37,7 @@ public:
 	void handleJoin(int argc, char** argv);
 	void handlePing(int argc, char** argv);
 	void handleQuit(int argc, char** argv);
+	void handleMode(int argc, char** argv);
 
 	// Send a string to the client.
 	void send(const std::string_view& string);

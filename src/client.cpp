@@ -141,7 +141,9 @@ void Client::handleRegistrationComplete()
 void Client::handleCap(int argc, char** argv)
 {
 	(void) argc, (void) argv;
-	log::warn("Unimplemented command: CAP");
+
+	// If the server doesn't support the CAP command, then no specific response
+	// is expected by the client, so we just do nothing here.
 }
 
 /**
@@ -271,6 +273,52 @@ void Client::handleQuit(int argc, char** argv)
 	// from the server.
 	std::string reason = "Quit: " + std::string(argv[0]);
 	server->disconnectClient(*this, reason);
+}
+
+/**
+ * Handle a MODE message.
+ */
+void Client::handleMode(int argc, char** argv)
+{
+	// Check that enough parameters were provided.
+	if (argc < 1 || argc > 3)
+		return sendLine("461 ", nick, " JOIN :Not enough parameters");
+
+	// Check if the target is a channel.
+	char* target = argv[0];
+	if (Channel::isValidName(target)) {
+
+		// Check that the channel actually exists.
+		Channel* channel = server->findChannelByName(target);
+		if (channel == nullptr)
+			return sendLine("403 ", nick, " ", target, " :No such channel");
+
+		// If no mode string was given, reply with the channel's current modes.
+		if (argc < 2)
+			return sendLine("324 ", nick, " ", target, " :", channel->modes);
+
+		log::error("MODE <channel> <modestring> is not yet implemented");
+		// TODO: Parse the mode string and change the channel mode.
+
+	// Otherwise, the target must be a client.
+	} else {
+
+		// Check that the client exists.
+		Client* client = server->findClientByName(target);
+		if (client == nullptr)
+			return sendLine("401 ", nick, " ", target, " :No such nick/channel");
+
+		// Check that the target matches the client's own nickname.
+		if (client->nick != target)
+			return sendLine("502 ", nick, " :Cant change mode for other users");
+
+		// If no mode string was given, reply with the client's current modes.
+		if (argc < 2)
+			return sendLine("221 ", nick, " :", modes);
+
+		log::error("MODE <client> <modestring> is not yet implemented");
+		// TODO: Parse the mode string and change the user mode.
+	}
 }
 
 /**
