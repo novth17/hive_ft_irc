@@ -169,7 +169,7 @@ void Server::parseMessage(Client& client, std::string message)
 {
 	// Array for holding the individual parts of the message.
 	int argc = 0;
-	log::info("Message: " ,message);
+	log::info(">>> Message: '", message, "'");
 	char* argv[MAX_MESSAGE_PARTS];
 
 	// Split the message into parts.
@@ -236,6 +236,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 		{"JOIN", &Client::handleJoin},
 		{"PING", &Client::handlePing},
 		{"QUIT", &Client::handleQuit},
+		{"MODE", &Client::handleMode},
 	};
 
 	// Send the message to the handler for that command.
@@ -307,7 +308,6 @@ Channel* Server::findChannelByName(std::string_view name)
 	for (auto& [channelName, channel]: channels)
 		if (channel.name == name)
 			return &channel;
-	log::warn("Channel ", name, " not found");
 	return nullptr;
 }
 
@@ -332,6 +332,5 @@ Client* Server::findClientByName(std::string_view name)
 	for (auto& [fd, client]: clients)
 		if (client.nick == name)
 			return &client;
-	log::warn("Client ", name, " not found");
 	return nullptr;
 }
