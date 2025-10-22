@@ -1,5 +1,6 @@
 #include <string.h>
 #include <sys/socket.h>
+#include <iomanip>
 
 #include "channel.hpp"
 #include "client.hpp"
@@ -7,9 +8,6 @@
 #include "log.hpp"
 #include "server.hpp"
 #include "utility.hpp"
-
-#define SUCCESS 0
-#define FAIL 1
 
 /**
  * Send a string of text to the client. All the other variants of the
@@ -29,60 +27,37 @@ void Client::send(const std::string_view& string)
 		output.erase(0, bytes);
 	}
 }
-/**
- * Handle a USERPARAM message.
- */
-int Client::handleUserParams(int argc, char** argv)
-{
-	// Must have passed the correct password first
-	if (!authorized) {
-		sendLine("464 :Password incorrect");
-		log::warn(user, "Password is not yet set");
-		return FAIL;
-	}
-
-	// Already registered
-	if (isRegistered) {
-		sendLine("462 :You may not reregister");
-		log::warn(nick, "Already registered user tried USER again");
-		return FAIL;
-	}
-	// USER <username> <0> <*> <realname>
-	if (argc < 4 || argv[0] == NULL || argv[3] == NULL) {
-		sendLine("461 USER :Not enough parameters");
-		return FAIL;
-	}
-	return SUCCESS;
-}
 
 /**
  * Handle a USER message.
  */
 void Client::handleUser(int argc, char** argv)
 {
-	if (handleUserParams(argc, argv) == FAIL)
-		return;
+	if (!isPassValid) { // Must have passed the correct password first: https://datatracker.ietf.org/doc/html/rfc2812#section-3.1.1
+		sendLine("464 :Password incorrect");
+		return log::warn(user, "Password is not yet set");
+	}
+
+	if (isRegistered) {
+		sendLine("462 :You may not reregister");
+		return log::warn(nick, "Already registered user tried USER again");
+	}
+
+	if (argc < 4 || argv[0] == NULL || argv[3] == NULL) // USER <username> <0> <*> <realname>
+		return sendLine("461 USER :Not enough parameters");
+
+	bool userAlreadySubmitted = (!user.empty() || !realname.empty()); // FIXME: Is it possible for us to receive them empty?
 
 	// Save username and real name
 	user = argv[0];
 	realname = argv[3];
-	if (!realname.empty() && realname[0] == ':')
+	if (realname[0] == ':')
 		realname.erase(0, 1); // remove the ':' prefix if present
 
 	log::info(nick, " registered USER as ", user, " (realname: ", realname, ")");
 
-	// Mark client as registered if NICK already provided
-	if (!nick.empty() && !user.empty())
-		isRegistered = true;
-
-	// Send welcome messages when registration completes
-	if (isRegistered) {
-		// FIXME: Don't hardcode these? Use actual hostnames, etc.
-		sendLine("001 ", nick, " :Welcome to the Internet Relay Network ", nick, "!", user, "@localhost");
-		sendLine("002 ", nick, " :Your host is ft_irc, running version 1.0");
-		sendLine("003 ", nick, " :This server was created today");
-		sendLine("004 ", nick, " " SERVER_NAME, " version 1.0");
-	}
+	if (!userAlreadySubmitted)
+		handleRegistrationComplete();
 }
 
 /**
@@ -90,23 +65,34 @@ void Client::handleUser(int argc, char** argv)
  */
 void Client::handleNick(int argc, char** argv)
 {
+	if (!isPassValid) { // Must have passed the correct password first: https://datatracker.ietf.org/doc/html/rfc2812#section-3.1.1
+		sendLine("464 :Password incorrect");
+		return log::warn(user, "Password is not yet set");
+	}
+
 	if (argc == 0)
-		return sendLine("431 ", nick, " NICK :No nickname given");
+		return sendLine("431 ", nick, " :No nickname given");
 	if (argc > 2)
 		return sendLine("461 ", nick, " NICK :Not enough parameters");
 
+	bool nickAlreadySubmitted = !nick.empty();
 	std::string_view newNick = argv[0];
+
 	if (server->findClientByName(newNick))
-		return sendLine("433 ", nick, " NICK :Nickname is already in use");
+		return sendLine("433 ", nick, " ", newNick, " :Nickname is already in use");
 	if ((newNick[0] == ':') || (newNick[0] == '#')
 		|| std::string_view(newNick).find(' ') != std::string::npos)
-		return sendLine("432 ", nick, " NICK :Erroneus nickname");
+		return sendLine("432 ", nick, " ", newNick, " :Erroneus nickname");
 
-	for (Channel* channel: channels)
-		for	(Client* member: channel->members)
-			if (member != this)
-				member->sendLine(":", nick, " NICK ", newNick);
+	if (isRegistered)
+		for (Channel* channel: channels)
+			for	(Client* member: channel->members)
+				if (member != this)
+					member->sendLine(":", nick, " NICK ", newNick);
 	nick = newNick;
+
+	if (!nickAlreadySubmitted)
+		handleRegistrationComplete();
 }
 
 /**
@@ -114,15 +100,39 @@ void Client::handleNick(int argc, char** argv)
  */
 void Client::handlePass(int argc, char** argv)
 {
+	bool passAlreadyValid = isPassValid;
+
 	if (isRegistered)
 		return sendLine("462 ", nick.empty() ? "*" : nick, " :You may not reregister");
 	if (argc != 1)
-		return sendLine("461 ", nick, " PASS :Not enough parameters");
+		return sendLine("461 ", nick.empty() ? "*" : nick, " PASS :Not enough parameters");
 	if (server->correctPassword(argv[0]) == false)
-		return sendLine("464 ", nick, " PASS :Password incorrect");
-	authorized = true;
-	log::info("Password is correct!!!");
-	// TODO: Do I need to implement a success message?
+	{
+		isPassValid = false;
+		sendLine("464 ", nick, " :Password incorrect");
+		return server->disconnectClient(*this, "Incorrect password");
+	}
+	isPassValid = true;
+
+	if (!passAlreadyValid)
+		handleRegistrationComplete();
+}
+
+void Client::handleRegistrationComplete()
+{
+	if (!nick.empty() && !user.empty() && isPassValid)
+		isRegistered = true;
+
+	if (isRegistered)
+	{
+		time_t _tm = time(NULL);
+		struct tm* curtime = localtime(&_tm);
+
+		sendLine("001 ", nick, " :Welcome to the ", SERVER_NAME, " Network ", nick, "!", user, "@localhost");
+		sendLine("002 ", nick, " :Your host is ", SERVER_NAME, ", running version 1.0");
+		send("003 ", nick, " :This server was created ", asctime(curtime)); // asctime() has a newline at the end
+		sendLine("004 ", nick, " ", SERVER_NAME, " Version 1.0");
+	}
 }
 
 /**
