@@ -20,8 +20,10 @@ Server::Server(const char* port, const char* password)
 Server::~Server()
 {
 	log::info("Closing connection");
-	for (const auto& [fd, client]: clients)
+	for (auto& [fd, client]: clients) {
+		client.sendLine("ERROR :Server is shutting down");
 		close(fd);
+	}
 	safeClose(serverFd);
 	safeClose(epollFd);
 }

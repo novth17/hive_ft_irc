@@ -284,13 +284,13 @@ bool Client::handlePrivMsgParams(int argc, char** argv) {
 
 	if (argc < 1) {
 		sendLine("411 " , nick, " :No recipient given");
-		log::warn("PRIVMSG: ", "No recipient parameter. NICK: " + nick);
+		log::warn("PRIVMSG: ", "No recipient parameter. NICK: ", nick);
 		return false;
 	}
 
 	if (argc < 2) {
 		sendLine("412 " , nick, " :No text to send");
-		log::warn("PRIVMSG: ", "No recipient parameter. NICK: " + nick);
+		log::warn("PRIVMSG: ", "No recipient parameter. NICK: ", nick);
 		return false;
 	}
 	return true;
@@ -300,60 +300,59 @@ bool Client::handlePrivMsgParams(int argc, char** argv) {
 //format      :Nickname!Username@hostOfSender
 //example     :abostrom!AxelTest@localhost
 
-void Client::handlePrivMsg(int argc, char** argv) {
-
+void Client::handlePrivMsg(int argc, char** argv)
+{
 	if (handlePrivMsgParams(argc, argv) == false)
 		return;
 
-	std::string target = argv[0];
-	Client* targetClient = nullptr;
-	Channel* targetChannel = nullptr;
-	bool isChannel = (!target.empty() && target[0] == '#');
+	// Iterate over the list of message targets.
+	char* targetList = argv[0];
+	while (*targetList != '\0') {
 
-	// Join all message parts into one
-	std::string message;
-	for (int i = 1; i < argc; ++i) {
-		if (i > 1)
-			message += " ";
-		message += argv[i];
-	}
+		// Check if the target is a channel.
+		char* target = nextListItem(targetList);
+		if (Channel::isValidName(target)) {
 
-	// Remove leading ':'
-	if (!message.empty() && message[0] == ':')
-		message.erase(0, 1);
+			// Check that the channel exists.
+			Channel* channel = server->findChannelByName(target);
+			if (channel == nullptr) {
+				sendLine("403 ", nick, " ", target, " :No such channel");
+				log::warn("PRIVMSG: No such channel: ", target);
+				continue;
+			}
 
-	// ---- Handle channel message ----
-	if (isChannel) {
-		targetChannel = server->findChannelByName(target);
-		if (targetChannel == nullptr) {
-			sendLine("403 ", nick, " ", target, " :No such channel");
-			log::warn("PRIVMSG", "No such channel: " + target);
-			return;
-		}
+			// Check that the sender is a member of the channel.
+			if (!channel->findClientByName(nick)) {
+				sendLine("404 ", nick, " ", target, " :Cannot send to channel (not a member)");
+				log::warn("PRIVMSG: Client ", nick, " is not a member of channel ", target);
+				continue;
+			}
 
-		//cant find client in the channel
-		if (targetChannel->findClientByName(nick) == nullptr) {
-			sendLine("404 ", nick, " ", target, " :Cannot send to channel (not a member)");
-			log::warn("PRIVMSG", "Client not a member of channel: " + target);
-			return;
+			// Broadcast the message to all channel members.
+			for (Client* member: channel->members) {
+				if (member != this) {
+					member->send(":", nick, "!", user, "@localhost PRIVMSG ", target, " :");
+					for (int i = 1; i < argc; i++)
+						member->send(i == 1 ? "" : " ", argv[i]);
+					member->sendLine();
+				}
+			}
+
+		// Otherwise, the target is another client.
+		} else {
+			Client* client = server->findClientByName(target);
+			if (client == nullptr) {
+				sendLine("401 ", nick, " ", target, " :No such nick/channel");
+				log::warn("PRIVMSG: No such nick: ", target);
+				continue;
+			}
+
+			// Send all parts of the message.
+			client->send(":", nick, "!", user, "@localhost PRIVMSG ", target, " :");
+			for (int i = 1; i < argc; i++)
+				client->send(i == 1 ? "" : " ", argv[i]);
+			client->sendLine();
 		}
-		//broadcasting the message to every member in the channel
-		for (Client* member : targetChannel->members) {
-			if (member != this)
-				member->sendLine(":", nick, "!", user, "@localhost PRIVMSG ", target, " :", message);
-		}
-		log::info(nick, " sent message to channel ", target, ": ", message);
-	}
-	// ---- Handle private message ----
-	else {
-		targetClient = server->findClientByName(target);
-		if (targetClient == nullptr) {
-			sendLine("401 ", nick, " ", target, " :No such nick/channel");
-			log::warn("PRIVMSG", "No such nick: " + target);
-			return;
-		}
-		targetClient->sendLine(":", nick, "!", user, "@localhost PRIVMSG ", target, " :", message);
-		log::info(nick, " sent private message to ", target, ": ", message);
 	}
 }
 
