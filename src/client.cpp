@@ -9,9 +9,6 @@
 #include "server.hpp"
 #include "utility.hpp"
 
-#define SUCCESS 0
-#define FAIL 1
-
 /**
  * Send a string of text to the client. All the other variants of the
  * Client::send method call this one to do their business.
@@ -119,7 +116,6 @@ void Client::handlePass(int argc, char** argv)
 
 	if (!passAlreadyValid)
 		handleRegistrationComplete();
-	// TODO: Message for when password is already valid and resubmitted?
 }
 
 void Client::handleRegistrationComplete()
