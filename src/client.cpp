@@ -128,11 +128,13 @@ void Client::handleRegistrationComplete()
 
 	if (isRegistered)
 	{
-		// FIXME: Don't hardcode these? Use actual hostnames, etc.
-		sendLine("001 ", nick, " :Welcome to the Internet Relay Network ", nick, "!", user, "@localhost");
-		sendLine("002 ", nick, " :Your host is ft_irc, running version 1.0");
-		sendLine("003 ", nick, " :This server was created today");
-		sendLine("004 ", nick, " ft_irc Version 1.0");
+		time_t _tm = time(NULL);
+		struct tm* curtime = localtime(&_tm);
+
+		sendLine("001 ", nick, " :Welcome to the ", SERVER_NAME, " Network ", nick, "!", user, "@localhost");
+		sendLine("002 ", nick, " :Your host is ", SERVER_NAME, ", running version 1.0");
+		send("003 ", nick, " :This server was created ", asctime(curtime)); // asctime() has a newline at the end
+		sendLine("004 ", nick, " ", SERVER_NAME, " Version 1.0");
 	}
 }
 
