@@ -39,6 +39,8 @@ public:
 	void handleQuit(int argc, char** argv);
 	void handleMode(int argc, char** argv);
 	void handleWho(int argc, char** argv);
+	int	 handlePrivMsgParams(int argc, char** argv);
+	void handlePrivMsg(int argc, char** argv);
 
 	// Send a string to the client.
 	void send(const std::string_view& string);

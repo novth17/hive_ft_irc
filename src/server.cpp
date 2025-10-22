@@ -238,6 +238,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 		{"QUIT", &Client::handleQuit},
 		{"MODE", &Client::handleMode},
 		{"WHO",  &Client::handleWho},
+		{"PRIVMSG",  &Client::handlePrivMsg}
 	};
 
 	// Send the message to the handler for that command.

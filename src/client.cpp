@@ -74,7 +74,7 @@ void Client::handleNick(int argc, char** argv)
 		return sendLine("431 ", nick, " :No nickname given");
 	if (argc > 2)
 		return sendLine("461 ", nick, " NICK :Not enough parameters");
-	
+
 	bool nickAlreadySubmitted = !nick.empty();
 	std::string_view newNick = argv[0];
 
@@ -273,6 +273,88 @@ void Client::handleQuit(int argc, char** argv)
 	// from the server.
 	std::string reason = "Quit: " + std::string(argv[0]);
 	server->disconnectClient(*this, reason);
+}
+
+/**
+ * Handle PrivMsgParams.
+ */
+int Client::handlePrivMsgParams(int argc, char** argv) {
+
+	(void) argv;
+
+	if (argc < 1) {
+		sendLine("411 " , nick, " :No recipient given");
+		log::warn("PRIVMSG: ", "No recipient parameter. NICK: " + nick);
+		return FAIL;
+	}
+
+	if (argc < 2) {
+		sendLine("412 " , nick, " :No text to send");
+		log::warn("PRIVMSG: ", "No recipient parameter. NICK: " + nick);
+		return FAIL;
+	}
+	return SUCCESS;
+}
+
+
+//format      :Nickname!Username@hostOfSender
+//example     :abostrom!AxelTest@localhost
+
+void Client::handlePrivMsg(int argc, char** argv) {
+
+	if (handlePrivMsgParams(argc, argv) == FAIL)
+		return;
+
+	std::string target = argv[0];
+	Client* targetClient = nullptr;
+	Channel* targetChannel = nullptr;
+	bool isChannel = (!target.empty() && target[0] == '#');
+
+	// Join all message parts into one
+	std::string message;
+	for (int i = 1; i < argc; ++i) {
+		if (i > 1)
+			message += " ";
+		message += argv[i];
+	}
+
+	// Remove leading ':'
+	if (!message.empty() && message[0] == ':')
+		message.erase(0, 1);
+
+	// ---- Handle channel message ----
+	if (isChannel) {
+		targetChannel = server->findChannelByName(target);
+		if (targetChannel == nullptr) {
+			sendLine("403 ", nick, " ", target, " :No such channel");
+			log::warn("PRIVMSG", "No such channel: " + target);
+			return;
+		}
+
+		//cant find client in the channel
+		if (targetChannel->findClientByName(nick) == nullptr) {
+			sendLine("404 ", nick, " ", target, " :Cannot send to channel (not a member)");
+			log::warn("PRIVMSG", "Client not a member of channel: " + target);
+			return;
+		}
+		//broadcasting the message to every member in the channel
+		for (Client* member : targetChannel->members) {
+			if (member != this)
+				member->sendLine(":", nick, "!", user, "@localhost PRIVMSG ", target, " :", message);
+		}
+		log::info(nick, " sent message to channel ", target, ": ", message);
+	}
+	// ---- Handle private message ----
+	else {
+		targetClient = server->findClientByName(target);
+		if (targetClient == nullptr) {
+			sendLine("401 ", nick, " ", target, " :No such nick/channel");
+			log::warn("PRIVMSG", "No such nick: " + target);
+			return;
+		}
+		targetClient->sendLine(":", nick, "!", user, "@localhost PRIVMSG ", target, " :", message);
+		log::info(nick, " sent private message to ", target, ": ", message);
+	}
 }
 
 /**
