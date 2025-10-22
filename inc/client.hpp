@@ -28,7 +28,6 @@ public:
 	void joinChannel(Channel* channel);
 	void leaveChannel(Channel* channel);
 
-	int	 handleUserParams(int argc, char** argv);
 	void handleUser(int argc, char** argv);
 	void handleNick(int argc, char** argv);
 	void handlePass(int argc, char** argv);
@@ -39,7 +38,7 @@ public:
 	void handleQuit(int argc, char** argv);
 	void handleMode(int argc, char** argv);
 	void handleWho(int argc, char** argv);
-	int	 handlePrivMsgParams(int argc, char** argv);
+	bool handlePrivMsgParams(int argc, char** argv);
 	void handlePrivMsg(int argc, char** argv);
 
 	// Send a string to the client.
