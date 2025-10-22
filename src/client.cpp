@@ -418,11 +418,18 @@ void Client::handleWho(int argc, char** argv)
 
 		// Send information about each client connected to the server.
 		for (auto& [_, client]: server->allClients()) {
-			auto channel = client.channels.begin();
+
+			// Get the name of one channel that this client is on, or '*' if the
+			// client is not joined to any channels.
+			std::string_view channel = "*";
+			if (!client.channels.empty())
+				channel = (*client.channels.begin())->name;
+
+			// Send some information about the client.
 			send("351 ", nick, " ");
-			send(channel == client.channels.end() ? "*" : (*channel)->name, " ");
-			send(client.user, " localhost ircserv ");
-			send("localhost "); // FIXME: Use the actual client hostname.
+			send(channel, " ");
+			send(client.user, " ");
+			send(client.host, " ");
 			send(SERVER_NAME " ");
 			send(client.nick, " ");
 			send("H "); // Away status is not implemented.

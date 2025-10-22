@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <csignal>
 #include <cstring>
 #include <netdb.h>
@@ -74,9 +75,10 @@ void Server::eventLoop(const char* host, const char* port)
 			if (fd == serverFd) {
 
 				// Open a new client connection.
-				sockaddr_in clientAddress;
-				socklen_t clientAddressLength = sizeof(clientAddress);
-				int clientFd = accept(serverFd, (struct sockaddr*)&clientAddress, &clientAddressLength);
+				struct sockaddr_in address;
+				struct sockaddr* sockaddr = reinterpret_cast<struct sockaddr*>(&address);
+				socklen_t length = sizeof(address);
+				int clientFd = accept(serverFd, sockaddr, &length);
 				if (clientFd == -1)
 					fail("Failed to accept connection: ", strerror(errno));
 
@@ -84,11 +86,12 @@ void Server::eventLoop(const char* host, const char* port)
 				Client& client = clients[clientFd];
 				client.server = this;
 				client.socket = clientFd;
+				client.host = inet_ntoa(address.sin_addr);
 				epollEvent.events = EPOLLIN | EPOLLOUT | EPOLLET;
 				epollEvent.data.fd = clientFd;
 				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
 					fail("Failed to add client socket to epoll: ", strerror(errno));
-				log::info("Client connected (fd = ", clientFd, ")");
+				log::info("Client connected: ", client.host);
 
 			// Exchange data with a client.
 			} else {
@@ -112,7 +115,7 @@ void Server::eventLoop(const char* host, const char* port)
 		for (auto i = clients.begin(); i != clients.end();) {
 			if (i->second.isDisconnected) {
 				close(i->first);
-				log::info("Client disconnected (fd = ", i->first, ")");
+				log::info("Client disconnected: ", i->second.host);
 				i = clients.erase(i);
 			} else {
 				++i;
@@ -137,7 +140,7 @@ void Server::receiveFromClient(Client& client)
 
 		// Handle client disconnection.
 		} else if (bytes == 0) {
-			client.disconnected = true;
+			client.isDisconnected = true;
 
 		// Buffer received data.
 		} else {
@@ -165,7 +168,7 @@ void Server::parseMessage(Client& client, std::string message)
 {
 	// Array for holding the individual parts of the message.
 	int argc = 0;
-	log::info(">>> Message: '", message, "'");
+	// log::info(">>> Message: '", message, "'");
 	char* argv[MAX_MESSAGE_PARTS];
 
 	// Split the message into parts.
