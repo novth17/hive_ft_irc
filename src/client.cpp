@@ -278,22 +278,22 @@ void Client::handleQuit(int argc, char** argv)
 /**
  * Handle PrivMsgParams.
  */
-int Client::handlePrivMsgParams(int argc, char** argv) {
+bool Client::handlePrivMsgParams(int argc, char** argv) {
 
 	(void) argv;
 
 	if (argc < 1) {
 		sendLine("411 " , nick, " :No recipient given");
 		log::warn("PRIVMSG: ", "No recipient parameter. NICK: " + nick);
-		return FAIL;
+		return false;
 	}
 
 	if (argc < 2) {
 		sendLine("412 " , nick, " :No text to send");
 		log::warn("PRIVMSG: ", "No recipient parameter. NICK: " + nick);
-		return FAIL;
+		return false;
 	}
-	return SUCCESS;
+	return true;
 }
 
 
@@ -302,7 +302,7 @@ int Client::handlePrivMsgParams(int argc, char** argv) {
 
 void Client::handlePrivMsg(int argc, char** argv) {
 
-	if (handlePrivMsgParams(argc, argv) == FAIL)
+	if (handlePrivMsgParams(argc, argv) == false)
 		return;
 
 	std::string target = argv[0];
