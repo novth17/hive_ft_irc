@@ -237,6 +237,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 		{"PING", &Client::handlePing},
 		{"QUIT", &Client::handleQuit},
 		{"MODE", &Client::handleMode},
+		{"WHO",  &Client::handleWho},
 	};
 
 	// Send the message to the handler for that command.
@@ -288,7 +289,8 @@ void Server::disconnectClient(Client& client, std::string_view reason)
 
 	// Remove the client from all its channels.
 	for (Channel* channel: client.channels)
-		client.leaveChannel(channel);
+		channel->members.erase(&client);
+	client.channels.clear();
 
 	// Unsubscribe from epoll events for the client connection.
 	int socket = client.socket;

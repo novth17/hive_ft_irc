@@ -26,6 +26,5 @@ Client* Channel::findClientByName(std::string_view nick)
 	for (Client* client: members)
 		if (client->nick == nick)
 			return client;
-	log::warn("Client ", nick, " was not found in channel ", name);
 	return nullptr;
 }

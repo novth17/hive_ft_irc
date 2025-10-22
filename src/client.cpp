@@ -79,13 +79,13 @@ void Client::handleUser(int argc, char** argv)
 
 	// Send welcome messages when registration completes
 	if (isRegistered) {
+		// FIXME: Don't hardcode these? Use actual hostnames, etc.
 		sendLine("001 ", nick, " :Welcome to the Internet Relay Network ", nick, "!", user, "@localhost");
 		sendLine("002 ", nick, " :Your host is ft_irc, running version 1.0");
 		sendLine("003 ", nick, " :This server was created today");
-		sendLine("004 ", nick, " ft_irc Version 1.0");
+		sendLine("004 ", nick, " " SERVER_NAME, " version 1.0");
 	}
 }
-
 
 /**
  * Handle a NICK message.
@@ -311,6 +311,36 @@ void Client::handleMode(int argc, char** argv)
 		log::error("MODE <client> <modestring> is not yet implemented");
 		// TODO: Parse the mode string and change the user mode.
 	}
+}
+
+/**
+ * Handle a WHO message.
+ */
+void Client::handleWho(int argc, char** argv)
+{
+	// Check that the correct number of parameters were given.
+	if (argc > 2)
+		return sendLine("461 ", nick, " JOIN :Not enough parameters");
+
+	// If the server doesn't support the WHO command with a <mask> parameter, it
+	// can send just an empty list.
+	if (argc == 0) {
+
+		// Send information about each client connected to the server.
+		for (auto& [_, client]: server->allClients()) {
+			auto channel = client.channels.begin();
+			send("351 ", nick, " ");
+			send(channel == client.channels.end() ? "*" : (*channel)->name, " ");
+			send(client.user, " localhost ircserv ");
+			send("localhost "); // FIXME: Use the actual client hostname.
+			send(SERVER_NAME " ");
+			send(client.nick, " ");
+			send("H "); // Away status is not implemented.
+			send(":0 "); // No server networks, so hop count is always zero.
+			sendLine(realname);
+		}
+	}
+	return sendLine("315 ", nick, " ", argv[0], " :End of WHO list");
 }
 
 /**
