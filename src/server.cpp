@@ -132,16 +132,13 @@ void Server::receiveFromClient(Client& client)
 
 		// Handle errors.
 		if (bytes == -1) {
-			if (errno == EAGAIN)
+			if (errno == EAGAIN || errno == ECONNRESET)
 				break; // Nothing more to read.
 			fail("Failed to receive from client: ", strerror(errno));
 
 		// Handle client disconnection.
 		} else if (bytes == 0) {
-			log::info("Client disconnected (fd = ", client.socket, ")");
-			epoll_ctl(epollFd, EPOLL_CTL_DEL, client.socket, nullptr);
-			safeClose(client.socket);
-			clients.erase(client.socket);
+			client.disconnected = true;
 
 		// Buffer received data.
 		} else {

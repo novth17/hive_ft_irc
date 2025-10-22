@@ -153,7 +153,7 @@ void Client::handlePart(int argc, char** argv)
 {
 	// Check that one or two parameters were provided.
 	if (argc < 1 || argc > 2)
-		return sendLine("461 ", nick, " JOIN :Not enough parameters");
+		return sendLine("461 ", nick, " PART :Not enough parameters");
 
 	// Check that the client is registered.
 	if (!isRegistered)
@@ -254,7 +254,7 @@ void Client::handlePing(int argc, char** argv)
 {
 	// Check that enough parameters were provided.
 	if (argc != 1)
-		return sendLine("461 ", nick, " JOIN :Not enough parameters");
+		return sendLine("461 ", nick, " PING :Not enough parameters");
 
 	// Send the token back to the client in a PONG message.
 	sendLine(":localhost PONG :", argv[0]); // FIXME: What should the source be?
@@ -267,7 +267,7 @@ void Client::handleQuit(int argc, char** argv)
 {
 	// Check that enough parameters were provided.
 	if (argc != 1)
-		return sendLine("461 ", nick, " JOIN :Not enough parameters");
+		return sendLine("461 ", nick, " QUIT :Not enough parameters");
 
 	// The <reason> for disconnecting must be prefixed with "Quit:" when sent
 	// from the server.
@@ -364,7 +364,7 @@ void Client::handleMode(int argc, char** argv)
 {
 	// Check that enough parameters were provided.
 	if (argc < 1 || argc > 3)
-		return sendLine("461 ", nick, " JOIN :Not enough parameters");
+		return sendLine("461 ", nick, " MODE :Not enough parameters");
 
 	// Check if the target is a channel.
 	char* target = argv[0];
@@ -410,7 +410,7 @@ void Client::handleWho(int argc, char** argv)
 {
 	// Check that the correct number of parameters were given.
 	if (argc > 2)
-		return sendLine("461 ", nick, " JOIN :Not enough parameters");
+		return sendLine("461 ", nick, " WHO :Not enough parameters");
 
 	// If the server doesn't support the WHO command with a <mask> parameter, it
 	// can send just an empty list.
