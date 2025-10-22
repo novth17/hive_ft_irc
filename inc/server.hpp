@@ -7,6 +7,20 @@
 class Channel;
 class Client;
 
+struct ClientIterators
+{
+	std::map<int, Client>::iterator first, last;
+	auto begin() { return first; }
+	auto end() { return last; }
+};
+
+struct ChannelIterators
+{
+	std::map<std::string, Channel>::iterator first, last;
+	auto begin() { return first; }
+	auto end() { return last; }
+};
+
 class Server
 {
 public:
@@ -20,6 +34,9 @@ public:
 	bool correctPassword(std::string_view pass);
 	bool clientsOnSameChannel(const Client& a, const Client& b);
 	void disconnectClient(Client& client, std::string_view reason);
+
+	ClientIterators allClients() { return {clients.begin(), clients.end()}; }
+	ChannelIterators allChannels() { return {channels.begin(), channels.end()}; }
 
 private:
 	bool setNonBlocking(int fd);
