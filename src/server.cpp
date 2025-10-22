@@ -111,7 +111,7 @@ void Server::eventLoop(const char* host, const char* port)
 		// send/receive part of the event loop, when the socket is still
 		// actively used.
 		for (auto i = clients.begin(); i != clients.end();) {
-			if (i->second.disconnected) {
+			if (i->second.isDisconnected) {
 				close(i->first);
 				log::info("Client disconnected (fd = ", i->first, ")");
 				i = clients.erase(i);
@@ -298,7 +298,7 @@ void Server::disconnectClient(Client& client, std::string_view reason)
 
 	// Mark the client as disconnected. The connection is actually closed before
 	// the next iteration of the event loop.
-	client.disconnected = true;
+	client.isDisconnected = true;
 }
 
 /**

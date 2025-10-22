@@ -1,7 +1,7 @@
 #pragma once
 
 // The server name used in different messages.
-#define SERVER_NAME "ircserv"
+#define SERVER_NAME "ircSuffer"
 
 // The maximum allowable port number.
 #define PORT_MAX 65535
