@@ -179,7 +179,7 @@ void Client::handlePart(int argc, char** argv)
 		}
 
 		// Leave the channel and send a PART message to the client.
-		leaveChannel(channel);
+		channel->removeMember(*this);
 		sendLine("PART ", channel->name, reason);
 
 		// Send PART messages to all members of the channel, with the departed
@@ -234,7 +234,12 @@ void Client::handleJoin(int argc, char** argv)
 		}
 
 		// Join the channel.
-		joinChannel(channel);
+		channel->addMember(*this);
+
+		// If the client is the first one to join the channel, make that client
+		// the operator for that channel.
+		if (channel->members.size() == 1)
+			channel->addOperator(*this);
 
 		// Send a join message, the topic, and a list of channel members.
 		sendLine(":", nick, " JOIN ", name);
@@ -357,6 +362,15 @@ void Client::handlePrivMsg(int argc, char** argv)
 }
 
 /**
+ * Have the client change the modes for a channel.
+ */
+void Client::setChannelMode(Channel& channel, char* modes, char* args)
+{
+	(void) channel, (void) modes, (void) args;
+	// TODO
+}
+
+/**
  * Handle a MODE message.
  */
 void Client::handleMode(int argc, char** argv)
@@ -376,10 +390,16 @@ void Client::handleMode(int argc, char** argv)
 
 		// If no mode string was given, reply with the channel's current modes.
 		if (argc < 2)
-			return sendLine("324 ", nick, " ", target, " :", channel->modes);
+			return sendLine("324 ", nick, " ", target, " :", channel->getModes());
 
-		log::error("MODE <channel> <modestring> is not yet implemented");
-		// TODO: Parse the mode string and change the channel mode.
+		// Check that the client has channel operator privileges.
+		if (channel->isOperator(*this))
+			return sendLine("482 ", nick, " ", target, " :You're not channel operator");
+
+		// Parse the mode string.
+		char noArguments[1] = "";
+		char* args = argc < 3 ? noArguments : argv[2];
+		setChannelMode(*channel, argv[1], args);
 
 	// Otherwise, the target must be a client.
 	} else {
@@ -395,7 +415,7 @@ void Client::handleMode(int argc, char** argv)
 
 		// If no mode string was given, reply with the client's current modes.
 		if (argc < 2)
-			return sendLine("221 ", nick, " :", modes);
+			return sendLine("221 ", nick, " :"); // No user modes implemented.
 
 		log::error("MODE <client> <modestring> is not yet implemented");
 		// TODO: Parse the mode string and change the user mode.
@@ -437,42 +457,4 @@ void Client::handleWho(int argc, char** argv)
 		}
 	}
 	return sendLine("315 ", nick, " ", argv[0], " :End of WHO list");
-}
-
-/**
- * Makes a client a member of a channel without checking for authorization. Does
- * nothing if the client is already joined to the channel.
- */
-void Client::joinChannel(Channel* channel)
-{
-	assert(channel != nullptr);
-	assert(channels.contains(channel) == !!channel->findClientByName(nick));
-	if (channels.contains(channel)) {
-		log::warn(nick, " is already in channel ", channel->name);
-	} else {
-		channel->members.insert(this);
-		channels.insert(channel);
-		log::info(nick, " was added to channel ", channel->name);
-	}
-	assert(channels.find(channel) != channels.end());
-	assert(channel->findClientByName(nick) == this);
-}
-
-/**
- * Makes a client no longer a member of of a channel. Does nothing if the client
- * is not a member of the channel.
- */
-void Client::leaveChannel(Channel* channel)
-{
-	assert(channel != nullptr);
-	assert(channels.contains(channel) == !!channel->findClientByName(nick));
-	if (channels.contains(channel)) {
-		channel->members.erase(this);
-		channels.erase(channel);
-		log::info(nick, " was removed from channel ", channel->name);
-	} else {
-		log::warn(nick, " is already in channel ", channel->name);
-	}
-	assert(channels.find(channel) == channels.end());
-	assert(channel->findClientByName(nick) == nullptr);
 }

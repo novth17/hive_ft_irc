@@ -291,7 +291,7 @@ void Server::disconnectClient(Client& client, std::string_view reason)
 
 	// Remove the client from all its channels.
 	for (Channel* channel: client.channels)
-		channel->members.erase(&client);
+		channel->removeMember(client);
 	client.channels.clear();
 
 	// Unsubscribe from epoll events for the client connection.
