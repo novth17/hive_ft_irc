@@ -1,5 +1,6 @@
 #include <string.h>
 #include <string_view>
+#include <cstring>
 #include <sys/socket.h>
 
 #include "channel.hpp"
@@ -382,6 +383,11 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 	std::string argsOut;
 	char lastSign = 0;
 
+	// Special case to keep irssi happy: Handle 'b' by sending an empty ban list
+	// for the channel.
+	if (std::strcmp(mode, "b") == 0)
+		return sendLine("368 ", nick, " ", channel.name, " :End of channel ban list");
+
 	// Parse the mode string.
 	char sign = 0;
 	while (*mode != '\0') {
@@ -534,17 +540,15 @@ void Client::handleMode(int argc, char** argv)
 		if (argc < 2)
 			return sendLine("221 ", nick, " :"); // No user modes implemented.
 
-		// User modes are not implemented, but we send an empty ban list for the
-		// 'b' mode just to keep irssi happy.
+		// User modes are not implemented, but we ignore the +i mode just to
+		// keep irssi happy.
 		char* mode = argv[1];
 		while (*mode) {
 			mode += *mode == '+' || *mode == '-';
 			if (!std::isalpha(*mode))
 				return sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
-			while (std::isalpha(*mode)) {
-				if (*mode++ == 'b') // Send an empty ban list.
-					sendLine("368 ", nick, " ", target, " :End of channel ban list");
-				else
+			for (; std::isalpha(*mode); mode++) {
+				if (*mode++ != 'i')
 					sendLine("502 ", nick, " :Unknown MODE flag");
 			}
 		}
