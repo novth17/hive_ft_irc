@@ -1,6 +1,6 @@
 #include "channel.hpp"
 #include "client.hpp"
-#include "log.hpp"
+#include "utility.hpp"
 
 /**
  * Check if a client is a member of this channel.
@@ -16,9 +16,9 @@ bool Channel::isMember(Client& client) const
  */
 void Channel::addMember(Client& client)
 {
-	if (members.empty())
-		operators.insert(&client);
 	members.insert(&client);
+	if (members.size() == 1)
+		addOperator(client);
 }
 
 /**
@@ -40,11 +40,14 @@ bool Channel::isOperator(Client& client) const
 }
 
 /**
- * Give a client channel operator privileges.
+ * Give a client channel operator privileges. Also sends a MODE message to the
+ * channel, letting everyone know that they're now an operator.
  */
 void Channel::addOperator(Client& client)
 {
-	operators.insert(&client);
+	if (operators.insert(&client).second)
+		for (Client* member: members)
+			member->sendLine("MODE ", name, " +o ", client.nick);
 }
 
 /**
@@ -96,7 +99,47 @@ std::string Channel::getModes() const
 		modes += "t";
 	if (!key.empty())
 		modes += "k";
-	if (clientLimit > 0)
-		modes += "l " + std::to_string(clientLimit);
+	if (memberLimit > 0)
+		modes += "l " + std::to_string(memberLimit);
 	return modes.empty() ? "" : "+" + modes;
+}
+
+/**
+ * Set the channel key. Returns true if the new key was set, or false if the key
+ * is empty or contains invalid characters.
+ */
+bool Channel::setKey(std::string_view newKey)
+{
+	if (newKey.empty())
+		return false;
+	for (char c: newKey)
+		if (std::isspace(c))
+			return false;
+	key = newKey;
+	return true;
+}
+
+/**
+ * Remove the channel key requirement.
+ */
+void Channel::removeKey()
+{
+	key.clear();
+}
+
+/**
+ * Set the channel member limit. The limit must be higher than zero.
+ */
+void Channel::setMemberLimit(int limit)
+{
+	assert(limit > 0);
+	memberLimit = limit;
+}
+
+/**
+ * Remove the channel member limit.
+ */
+void Channel::removeMemberLimit()
+{
+	memberLimit = 0;
 }

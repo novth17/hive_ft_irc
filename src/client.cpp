@@ -241,8 +241,10 @@ void Client::handleJoin(int argc, char** argv)
 		sendLine(":", nick, " JOIN ", name);
 		sendLine("332 ", nick, " ", name, " :", channel->topic);
 		send("353 ", nick, " ", channel->symbol, " ", name, " :");
-		for (Client* member: channel->members)
-			send(member->prefix, member->nick, " ");
+		for (Client* member: channel->members) {
+			const char* prefix = channel->isOperator(*member) ? "@" : "";
+			send(prefix, member->nick, " ");
+		}
 		sendLine(); // Line break at the end of the member list.
 		sendLine("366 ", nick, " ", name, " :End of /NAMES list");
 	}
@@ -360,10 +362,115 @@ void Client::handlePrivMsg(int argc, char** argv)
 /**
  * Have the client change the modes for a channel.
  */
-void Client::setChannelMode(Channel& channel, char* modes, char* args)
+void Client::setChannelMode(Channel& channel, char* mode, char* args)
 {
-	(void) channel, (void) modes, (void) args;
-	// TODO
+	// String containing the set of mode changes that were applied.
+	std::string modeOut;
+	std::string argsOut;
+	char lastSign = 0;
+
+	// Parse the mode string.
+	char sign = 0;
+	while (*mode != '\0') {
+
+		// Expect either a '+' or a '-'.
+		sign = *mode++;
+		if (sign != '+' && sign != '-')
+			return sendLine("472 ", nick, " ", sign, " :is unknown mode char to me");
+		if (!std::isalpha(*mode))
+			return sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
+
+		// Iterate over the characters in the mode string.
+		for (; std::isalpha(*mode); mode++) {
+			switch (*mode) {
+
+				// +i: Toggle invite-only mode.
+				case 'i': {
+					if (channel.inviteOnly == (sign == '+'))
+						continue;
+					channel.inviteOnly = sign == '+';
+				} break;
+
+				// +t: Toggle restrict topic mode.
+				case 't': {
+					if (channel.restrictTopic == (sign == '+'))
+						continue;
+					channel.restrictTopic = sign == '+';
+				} break;
+
+				// +k: Set or remove the channel key.
+				case 'k': {
+					if (sign == '+') {
+						char* key = nextListItem(args);
+						if (key == channel.key)
+							continue;
+						if (!channel.setKey(key)) {
+							sendLine("525 ", nick, " ", channel.name, " :Key is not well-formed");
+							continue;
+						}
+						argsOut += " " + std::string(key);
+					} else {
+						channel.removeKey();
+					}
+				} break;
+
+				// +l: Set or remove the channel member limit.
+				case 'l': {
+					if (sign == '+') {
+						int limit;
+						if (!parseInt(nextListItem(args), limit) || limit <= 0) {
+							sendLine("696 ", nick, " ", channel.name, " l ", limit, " :Bad limit");
+							continue;
+						} else if (limit == channel.memberLimit) {
+							continue;
+						}
+						channel.setMemberLimit(limit);
+						argsOut += " " + std::to_string(limit);
+					} else {
+						if (channel.memberLimit == 0)
+							continue;
+						channel.removeMemberLimit();
+					}
+				} break;
+
+				// +o: Give or take operator privileges from a client.
+				case 'o': {
+					char* target = nextListItem(args);
+					Client* client = server->findClientByName(target);
+					if (client == nullptr) {
+						sendLine("401 ", nick, " ", target, " :No such nick/channel");
+						continue;
+					}
+
+					// Skip if the mode wouldn't change.
+					if ((sign == '+') == channel.isOperator(*client))
+						continue;
+					if (sign == '+')
+						channel.addOperator(*client);
+					if (sign == '-')
+						channel.removeOperator(*client);
+					argsOut += " " + std::string(target);
+				} break;
+
+				// Anything else is unrecognized.
+				default: {
+					 sendLine("502 ", nick, " :Unknown MODE flag");
+				} continue;
+			}
+
+			// Update the set of added and removed modes.
+			if (modeOut.empty() || lastSign != sign) {
+				modeOut.push_back(sign);
+				lastSign = sign;
+			}
+			modeOut += *mode;
+		}
+	}
+
+	// Broadcast a message to all channel members containing only the modes that
+	// were actually applied.
+	for (Client* member: channel.members)
+		member->sendLine("MODE ", channel.name, " ", modeOut, argsOut);
 }
 
 /**
@@ -389,7 +496,7 @@ void Client::handleMode(int argc, char** argv)
 			return sendLine("324 ", nick, " ", target, " :", channel->getModes());
 
 		// Check that the client has channel operator privileges.
-		if (channel->isOperator(*this))
+		if (!channel->isOperator(*this))
 			return sendLine("482 ", nick, " ", target, " :You're not channel operator");
 
 		// Parse the mode string.
@@ -413,8 +520,18 @@ void Client::handleMode(int argc, char** argv)
 		if (argc < 2)
 			return sendLine("221 ", nick, " :"); // No user modes implemented.
 
-		log::error("MODE <client> <modestring> is not yet implemented");
-		// TODO: Parse the mode string and change the user mode.
+		// User modes are not implemented, so we just send the appropriate
+		// error for every character in the mode string.
+		char* mode = argv[1];
+		while (*mode) {
+			char sign = *mode++; // Should be either '+' or '-'.
+			if (sign != '+' && sign != '-')
+				return sendLine("472 ", nick, " ", sign, " :is unknown mode char to me");
+			if (!std::isalpha(*mode))
+				return sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
+			for (; std::isalpha(*mode); mode++)
+				 sendLine("502 ", nick, " :Unknown MODE flag");
+		}
 	}
 }
 

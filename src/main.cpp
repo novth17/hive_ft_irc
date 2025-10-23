@@ -2,12 +2,14 @@
 #include <cstdlib>
 #include <cstring>
 #include <errno.h>
+#include <iostream>
 #include <signal.h>
 #include <string>
 
 #include "irc.hpp"
 #include "log.hpp"
 #include "server.hpp"
+#include "utility.hpp"
 
 int main(int argc, char** argv)
 {
@@ -18,17 +20,9 @@ int main(int argc, char** argv)
 	}
 
 	// Check that the first argument is a valid port number.
-	char* end = nullptr;
-	long port = strtol(argv[1], &end, 10);
-
-	// Check that it's in the valid range of port numbers.
-	if (errno == ERANGE || port < 0 || port > PORT_MAX) {
-		printf("error: port number must be in [0, %d]\n", PORT_MAX);
-		return EXIT_FAILURE;
-
-	// Check that the whole string was used (no extra non-digits).
-	} else if (strlen(argv[1]) == 0 || end != argv[1] + strlen(argv[1])) {
-		printf("error: invalid port number '%s'\n", argv[1]);
+	int port;
+	if (!parseInt(argv[1], port) || port < 0 || port > PORT_MAX) {
+		log::error("invalid port number: ", argv[1]);
 		return EXIT_FAILURE;
 	}
 

@@ -1,3 +1,4 @@
+#include <climits>
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
@@ -41,3 +42,25 @@ char* nextListItem(char*& list, const char* delimiter)
 	return firstItem;
 }
 
+/**
+ * Convert a string to an integer. Return true if the conversion was successful,
+ * or false if the value is not a valid int.
+ */
+bool parseInt(const char* input, int& output)
+{
+	assert(input != nullptr);
+
+	// Convert the value to a long.
+	char* end = nullptr;
+	long value = std::strtol(input, &end, 10);
+
+	// Check that it's in the valid range of port numbers.
+	if (errno == ERANGE || value < INT_MIN || value > INT_MAX)
+		return false;
+
+	// Check that the whole string was used (no extra non-digits).
+	if (*input == '\0' || *end != '\0')
+		return false;
+	output = static_cast<int>(value);
+	return true;
+}

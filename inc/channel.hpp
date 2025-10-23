@@ -21,7 +21,7 @@ public:
 	bool inviteOnly = false;		// Whether the +i mode is set
 	bool restrictTopic = false;		// Whether the +t mode is set
 	std::string key;				// Key for the +k mode (empty = no key)
-	int clientLimit = 0;			// Limit for the +l mode (0 = no limit)
+	int memberLimit = 0;			// Limit for the +l mode (0 = no limit)
 
 	bool isMember(Client& client) const;
 	void addMember(Client& client);
@@ -30,6 +30,12 @@ public:
 	bool isOperator(Client& client) const;
 	void addOperator(Client& client);
 	void removeOperator(Client& client);
+
+	bool setKey(std::string_view newKey);
+	void removeKey();
+
+	void setMemberLimit(int limit);
+	void removeMemberLimit();
 
 	std::string getModes() const;
 	static bool isValidName(std::string_view name);

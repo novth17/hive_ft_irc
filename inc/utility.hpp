@@ -1,6 +1,9 @@
 #pragma once
 
 #include <stdexcept>
+#include <string_view>
+
+#include "log.hpp"
 
 // ANSI escape codes for nicer terminal output.
 #define ANSI_RED	"\x1b[31m"
@@ -35,3 +38,4 @@
 void safeClose(int& fd);
 bool matchIgnoreCase(const char* a, const char* b);
 char* nextListItem(char*& list, const char* delimiter = ",");
+bool parseInt(const char* input, int& output);
