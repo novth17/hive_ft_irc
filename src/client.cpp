@@ -658,26 +658,24 @@ void Client::handleKick(int argc, char** argv)
         return;
     }
 
-    // find target client
-    Client* clientToKick = nullptr;
-    for (Client* member : channel->members) {
-        if (member->nick == targetToKick) {
-            clientToKick = member;
-            break;
-        }
-    }
+	// Check that the sender has operator privileges on the channel.
+	if (!channel->isOperator(*this))
+		return sendLine("482 ", nick, " ", channelName, " :You're not channel operator");
+
 	//if no target found in the channel
-    if (!clientToKick) {
+    Client* clientToKick = channel->findClientByName(targetToKick);
+    if (clientToKick == nullptr) {
         sendLine("441 ", nick, " ", targetToKick, " ", channelName, " :They aren't on that channel");
         log::warn("KICK: ", nick, " tried to kick ", targetToKick, " but they are not in ", channelName);
         return;
     }
 
     // broadcast kick message
-    std::string msg = ":" + nick + "!" + user + "@localhost KICK " +
-                      channelName + " " + targetToKick + " :" + reason;
-    for (Client* member : channel->members)
-        member->sendLine(msg);
+    for (Client* member: channel->members) {
+		member->send(":", nick, "!", user, "@", host, " ");
+        member->send("KICK ", channelName, " ", targetToKick);
+		member->sendLine(" :", reason);
+	}
 
     // remove kicked dude
     channel->removeMember(*clientToKick);
