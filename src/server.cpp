@@ -242,7 +242,8 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 		{"MODE", &Client::handleMode},
 		{"WHO",  &Client::handleWho},
 		{"KICK", &Client::handleKick},
-		{"PRIVMSG",  &Client::handlePrivMsg}
+		{"PRIVMSG",  &Client::handlePrivMsg},
+		{"TOPIC",  &Client::handleTopic}
 	};
 
 	// Send the message to the handler for that command.

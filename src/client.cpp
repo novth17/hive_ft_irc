@@ -455,6 +455,60 @@ void Client::handleWho(int argc, char** argv)
 	return sendLine("315 ", nick, " ", argv[0], " :End of WHO list");
 }
 
+void Client::handleTopic(int argc, char** argv)
+{
+	// TODO: Handle operator permission
+
+	if (argc < 1 || argc > 2)
+		return sendLine("461 ", nick, " NICK :Not enough parameters");
+
+	Channel* channel = server->findChannelByName(argv[0]);
+	if (!channel)
+		return sendLine("403 ", argv[0], " :No such channel");
+
+	if (argc == 1)
+	{
+		if (!channel->findClientByName(nick))
+			return sendLine("442 ", channel->name, " :You're not on that channel");
+
+		if (channel->topic.empty())
+			return sendLine("331 ", channel->name, " :No topic is set");
+
+		sendLine("332 ", nick, " ", channel->name, " :", channel->topic);
+		sendLine("333 ", nick, " ", channel->name, " ", channel->topicChangeStr);
+		return;
+	}
+
+	assert(argc == 2);
+
+	if (!channel->findClientByName(nick))
+		return sendLine("442 ", channel->name, " :You're not on that channel");
+
+	// if (channel.MODE == PROTECTED && NOT_OPERATOR)
+	// 	return sendLine("482 ", CHANNEL, " :You're not channel operator"); // Intentional grammar mistake, according to spec :)
+
+	channel->topic = argv[1];
+	channel->topicChangeStr = std::string(nick).append(" ").append(Server::getTimeString());
+}
+
+/**
+ * Makes a client a member of a channel without checking for authorization. Does
+ * nothing if the client is already joined to the channel.
+ */
+void Client::joinChannel(Channel* channel) // TODO: Deleteable? Kept this during merge conflict but might be unnecessary
+{
+	assert(channel != nullptr);
+	assert(channels.contains(channel) == !!channel->findClientByName(nick));
+	if (channels.contains(channel)) {
+		log::warn(nick, " is already in channel ", channel->name);
+	} else {
+		channel->members.insert(this);
+		channels.insert(channel);
+		log::info(nick, " was added to channel ", channel->name);
+	}
+	assert(channels.find(channel) != channels.end());
+	assert(channel->findClientByName(nick) == this);
+}
 
 //forced removal of a user from a channel.
 //:PUPU!p@localhost KICK #channel eve :being too rigorous
