@@ -34,4 +34,4 @@
 
 void safeClose(int& fd);
 bool matchIgnoreCase(const char* a, const char* b);
-char* nextListItem(char*& list);
+char* nextListItem(char*& list, const char* delimiter = ",");
