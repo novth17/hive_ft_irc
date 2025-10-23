@@ -239,6 +239,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 		{"QUIT", &Client::handleQuit},
 		{"MODE", &Client::handleMode},
 		{"WHO",  &Client::handleWho},
+		{"KICK", &Client::handleKick},
 		{"PRIVMSG",  &Client::handlePrivMsg}
 	};
 

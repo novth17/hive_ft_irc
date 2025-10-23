@@ -40,3 +40,4 @@ char* nextListItem(char*& list, const char* delimiter)
 		*list++ = '\0';
 	return firstItem;
 }
+

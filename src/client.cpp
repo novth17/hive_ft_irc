@@ -333,7 +333,7 @@ void Client::handlePrivMsg(int argc, char** argv)
 				continue;
 			}
 
-			// Broadcast the message to all channel members.
+			// Broadcast the message to all channel members. can make this a  method
 			for (Client* member: channel->members) {
 				if (member != this) {
 					member->send(":", nick, "!", user, "@localhost PRIVMSG ", target, " :");
@@ -457,4 +457,74 @@ void Client::handleWho(int argc, char** argv)
 		}
 	}
 	return sendLine("315 ", nick, " ", argv[0], " :End of WHO list");
+}
+
+
+//forced removal of a user from a channel.
+//:PUPU!p@localhost KICK #channel eve :being too rigorous
+//:<kicker>!<user>@localhost KICK <channel> <targetToKick> :<reason>
+void Client::handleKick(int argc, char** argv)
+{
+    // Must have at least <channel> and <user>
+    if (argc < 2) {
+        sendLine("461 ", nick, " KICK :Not enough parameters");
+        return;
+    }
+
+    std::string channelName = argv[0];
+    std::string targetToKick = argv[1];
+
+    // build reason string coz it can be many args
+    std::string reason;
+    if (argc >= 3) {
+		for (int i = 2; i < argc; ++i) {
+			reason += (i > 2 ? " " : ""); // add a space before everything except the first word
+			reason += argv[i];
+		}
+        if (!reason.empty() && reason[0] == ':')
+            reason.erase(0, 1);
+    } else {
+        reason = "No reason. I just kicked you for fun";
+    }
+
+    // find channel
+    Channel* channel = server->findChannelByName(channelName);
+    if (!channel) {
+        sendLine("403 ", nick, " ", channelName, " :No such channel");
+        log::warn("KICK: No such channel: ", channelName);
+        return;
+    }
+
+    // check sender is in channel
+    if (!channel->findClientByName(nick)) {
+        sendLine("442 ", nick, " ", channelName, " :You're not on that channel");
+        log::warn("KICK: ", nick, " tried to kick but is not a member of ", channelName);
+        return;
+    }
+
+    // find target client
+    Client* clientToKick = nullptr;
+    for (Client* member : channel->members) {
+        if (member->nick == targetToKick) {
+            clientToKick = member;
+            break;
+        }
+    }
+	//if no target found in the channel
+    if (!clientToKick) {
+        sendLine("441 ", nick, " ", targetToKick, " ", channelName, " :They aren't on that channel");
+        log::warn("KICK: ", nick, " tried to kick ", targetToKick, " but they are not in ", channelName);
+        return;
+    }
+
+    // broadcast kick message
+    std::string msg = ":" + nick + "!" + user + "@localhost KICK " +
+                      channelName + " " + targetToKick + " :" + reason;
+    for (Client* member : channel->members)
+        member->sendLine(msg);
+
+    // remove kicked dude
+    channel->removeMember(*clientToKick);
+
+    log::info("KICK: ", nick, " kicked ", targetToKick, " from ", channelName);
 }
