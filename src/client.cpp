@@ -242,9 +242,16 @@ void Client::handleJoin(int argc, char** argv)
 		// Join the channel.
 		channel->addMember(*this);
 
-		// Send a join message, the topic, and a list of channel members.
-		sendLine(":", nick, " JOIN ", name);
-		sendLine("332 ", nick, " ", name, " :", channel->topic);
+		// Send a JOIN message to the joining client.
+		sendLine(":", fullname, " JOIN ", name);
+
+		// Send the topic (with timestamp) if there is one.
+		if (!channel->topic.empty()) {
+			sendLine("332 ", nick, " ", name, " :", channel->topic);
+			sendLine("333 ", nick, " ", channel->name, " ", channel->topicChangeStr);
+		}
+
+		// Send a list of members in the channel.
 		send("353 ", nick, " ", channel->symbol, " ", name, " :");
 		for (Client* member: channel->members) {
 			const char* prefix = channel->isOperator(*member) ? "@" : "";
@@ -252,6 +259,11 @@ void Client::handleJoin(int argc, char** argv)
 		}
 		sendLine(); // Line break at the end of the member list.
 		sendLine("366 ", nick, " ", name, " :End of /NAMES list");
+
+		// Notify other members of the channel that someone joined.
+		for (Client* member: channel->members)
+			if (member != this)
+				member->sendLine(":", fullname, " JOIN ", channel->name);
 	}
 }
 
