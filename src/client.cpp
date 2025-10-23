@@ -169,19 +169,20 @@ void Client::handlePart(int argc, char** argv)
 		}
 
 		// Check that the client is actually on that channel.
-		if (channels.find(channel) == channels.end()) {
+		if (!channel->isMember(*this)) {
 			sendLine("442 ", nick, " ", channelName, " :You're not on that channel");
 			continue;
 		}
 
 		// Leave the channel and send a PART message to the client.
 		channel->removeMember(*this);
-		sendLine("PART ", channel->name, reason);
+		sendLine(":", nick, "!", user, "@", host, " PART ", channel->name);
 
 		// Send PART messages to all members of the channel, with the departed
 		// client's nickname as the <source>.
 		for (Client* member: channel->members)
-			member->sendLine(":", nick, " PART", channel->name, reason);
+			member->sendLine(":", nick, "!", user, "@", host, " PART ", channel->name, reason);
+		log::info(nick, " left channel ", channel->name);
 	}
 }
 
