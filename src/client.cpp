@@ -580,10 +580,11 @@ void Client::handleWho(int argc, char** argv)
 	return sendLine("315 ", nick, " ", argv[0], " :End of WHO list");
 }
 
+/**
+ * Handle a TOPIC command.
+ */
 void Client::handleTopic(int argc, char** argv)
 {
-	// TODO: Handle operator permission
-
 	if (argc < 1 || argc > 2)
 		return sendLine("461 ", nick, " NICK :Not enough parameters");
 
@@ -593,6 +594,7 @@ void Client::handleTopic(int argc, char** argv)
 
 	if (argc == 1)
 	{
+		log::info("Sent topic: ", channel->topic);
 		if (!channel->findClientByName(nick))
 			return sendLine("442 ", channel->name, " :You're not on that channel");
 
@@ -606,14 +608,21 @@ void Client::handleTopic(int argc, char** argv)
 
 	assert(argc == 2);
 
-	if (!channel->findClientByName(nick))
+	if (!channel->isMember(*this))
 		return sendLine("442 ", channel->name, " :You're not on that channel");
 
-	if (!channel->isOperator(*this))
-		return sendLine("482 ", channel->name, " :You're not channel operator"); // Grammar mistake according to spec :)
+	// Check that the client has permissions to change the topic.
+	if (channel->restrictTopic && !channel->isOperator(*this))
+		return sendLine("482 ", nick, " ", channel->name, " :You're not channel operator"); // Grammar mistake according to spec :)
 
+	// Change the topic.
 	channel->topic = argv[1];
 	channel->topicChangeStr = std::string(nick).append(" ").append(Server::getTimeString());
+	log::info("Changed topic of ", channel->name, " to: ", channel->topic);
+
+	// Notify all channel members (including the sender) of the change.
+	for (Client* member: channel->members)
+		member->sendLine("TOPIC ", channel->name, " :", channel->topic);
 }
 
 //forced removal of a user from a channel.
