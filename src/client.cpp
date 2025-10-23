@@ -1,6 +1,5 @@
 #include <string.h>
 #include <sys/socket.h>
-#include <iomanip>
 
 #include "channel.hpp"
 #include "client.hpp"
@@ -125,12 +124,9 @@ void Client::handleRegistrationComplete()
 
 	if (isRegistered)
 	{
-		time_t _tm = time(NULL);
-		struct tm* curtime = localtime(&_tm);
-
 		sendLine("001 ", nick, " :Welcome to the ", SERVER_NAME, " Network ", nick, "!", user, "@localhost");
 		sendLine("002 ", nick, " :Your host is ", SERVER_NAME, ", running version 1.0");
-		send("003 ", nick, " :This server was created ", asctime(curtime)); // asctime() has a newline at the end
+		sendLine("003 ", nick, " :This server was created ", server->getLaunchTime());
 		sendLine("004 ", nick, " ", SERVER_NAME, " Version 1.0");
 	}
 }

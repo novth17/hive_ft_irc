@@ -17,6 +17,7 @@ public:
 	std::set<Client*> members;		// All clients joined to this channel
 	std::set<Client*> operators;	// All clients with operator privileges.
 	Server* server = nullptr;		// Pointer to the server object.
+	std::string topicChangeStr;		// The nick of the person who last changed topic plus a timestamp
 	bool inviteOnly = false;		// Whether the +i mode is set
 	bool restrictTopic = false;		// Whether the +t mode is set
 	std::string key;				// Key for the +k mode (empty = no key)

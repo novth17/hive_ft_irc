@@ -34,6 +34,8 @@ public:
 	bool correctPassword(std::string_view pass);
 	bool clientsOnSameChannel(const Client& a, const Client& b);
 	void disconnectClient(Client& client, std::string_view reason);
+	std::string getLaunchTime();
+	static std::string getTimeString();
 
 	ClientIterators allClients() { return {clients.begin(), clients.end()}; }
 	ChannelIterators allChannels() { return {channels.begin(), channels.end()}; }
@@ -56,6 +58,7 @@ private:
 
 	int serverFd = -1;
 	int epollFd = -1;
+	std::string launchTime;
 	std::string port;
 	std::string password;
 	std::map<int, Client> clients;

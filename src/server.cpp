@@ -3,6 +3,7 @@
 #include <cstring>
 #include <netdb.h>
 #include <sys/epoll.h>
+#include <iomanip>
 
 #include "channel.hpp"
 #include "client.hpp"
@@ -14,6 +15,7 @@
 Server::Server(const char* port, const char* password)
 	: port(port), password(password)
 {
+	launchTime = getTimeString();
 	log::info("Starting server with password ", password);
 }
 
@@ -338,4 +340,20 @@ Client* Server::findClientByName(std::string_view name)
 		if (client.nick == name)
 			return &client;
 	return nullptr;
+}
+
+std::string Server::getLaunchTime()
+{
+	return launchTime;
+}
+
+std::string Server::getTimeString()
+{
+	time_t _tm = time(NULL);
+	struct tm* curtime = localtime(&_tm);
+
+	std::string timeString = asctime(curtime);
+	timeString.erase(timeString.length() - 1, 1); // Removes newline
+
+	return timeString;
 }
