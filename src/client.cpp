@@ -232,7 +232,7 @@ void Client::handleJoin(int argc, char** argv)
 
 		// Issue an error message if the channel is invite-only and the client isn't invited
 		if (channel->inviteOnly && !channel->isInvited(nick)) {
-			sendLine(nick, " ", channel->name, " :Cannot join channel (+i)");
+			sendLine("473 ", nick, " ", channel->name, " :Cannot join channel (+i)");
 			continue;
 		}
 
@@ -727,12 +727,10 @@ void Client::handleInvite(int argc, char** argv)
 	if (!channel->findClientByName(nick))
 		return sendLine("442 ", nick, " ", channel->name, " :You're not on that channel");
 
-	Client* invitedClient = channel->findClientByName(invitedName);
-
-	if (invitedClient)
+	if (channel->findClientByName(invitedName))
 		return sendLine("443 ", nick, " ", invitedName, " ", channel->name, " :is already on channel");
 
-	if (channel->inviteOnly && !channel->isOperator(*this))
+	if (!channel->isOperator(*this))
 		return sendLine("482 ", nick, " ", channel->name, " :You're not channel operator");
 
 	channel->addInvited(invitedName);
