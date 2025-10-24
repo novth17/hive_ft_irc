@@ -18,10 +18,11 @@ void Client::send(const std::string_view& string)
 {
 	output.append(string);
 	ssize_t bytes = 1;
+	const int sendFlags = MSG_DONTWAIT | MSG_NOSIGNAL;
 	while (bytes > 0 && output.find("\r\n") != output.npos) {
-		bytes = ::send(socket, output.data(), output.size(), MSG_DONTWAIT);
+		bytes = ::send(socket, output.data(), output.size(), sendFlags);
 		if (bytes == -1) {
-			if (errno == EAGAIN || errno == ECONNRESET)
+			if (errno == EAGAIN || errno == ECONNRESET || errno == EPIPE)
 				break;
 			fail("Failed to send to client: ", strerror(errno));
 		}
