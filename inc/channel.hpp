@@ -15,7 +15,7 @@ public:
 	std::string name;				// The name of the channel
 	std::string topic;				// The current topic
 	std::set<Client*> members;		// All clients joined to this channel
-	std::set<Client*> operators;	// All clients with operator privileges.
+	std::set<Client*> operators;	// All clients with operator privileges
 	Server* server = nullptr;		// Pointer to the server object.
 	std::string topicChangeStr;		// The nick of the person who last changed topic plus a timestamp
 	bool inviteOnly = false;		// Whether the +i mode is set
@@ -38,7 +38,15 @@ public:
 	void removeMemberLimit();
 	bool isFull() const;
 
+	bool isInvited(std::string_view invited);
+	void addInvited(std::string_view invited);
+	void resetInvited();
+
 	std::string getModes() const;
 	static bool isValidName(std::string_view name);
 	Client* findClientByName(std::string_view name);
+
+private:
+	std::set<std::string> invited;	// All nicknames invited to this channel
+
 };

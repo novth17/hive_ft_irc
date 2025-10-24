@@ -41,6 +41,7 @@ public:
 	void handlePrivMsg(int argc, char** argv);
 	void handleKick(int argc, char** argv);
 	void handleTopic(int argc, char** argv);
+	void handleInvite(int argc, char** argv);
 
 	// Send a string to the client.
 	void send(const std::string_view& string);
