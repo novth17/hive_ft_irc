@@ -17,8 +17,10 @@ bool Channel::isMember(Client& client) const
 void Channel::addMember(Client& client)
 {
 	members.insert(&client);
-	if (members.size() == 1)
+	if (members.size() == 1) {
 		addOperator(client);
+		client.sendLine("MODE ", name, " +o ", client.nick);
+	}
 }
 
 /**
@@ -45,9 +47,7 @@ bool Channel::isOperator(Client& client) const
  */
 void Channel::addOperator(Client& client)
 {
-	if (operators.insert(&client).second)
-		for (Client* member: members)
-			member->sendLine("MODE ", name, " +o ", client.nick);
+	operators.insert(&client);
 }
 
 /**

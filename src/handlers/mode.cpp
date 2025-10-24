@@ -117,8 +117,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 	// Broadcast a message to all other channel members containing only the
 	// modes that were actually applied.
 	for (Client* member: channel.members)
-		if (member != this)
-			member->sendLine("MODE ", channel.name, " ", modeOut, argsOut);
+		member->sendLine(":", fullname, " MODE ", channel.name, " ", modeOut, argsOut);
 }
 
 /**
