@@ -49,13 +49,6 @@ private:
 	void parseMessage(Client& client, std::string message);
 	void handleMessage(Client& client, int argc, char** argv);
 
-	// Handlers for specific messages.
-	void handleUser(Client& client, int argc, char** argv);
-	void handleNick(Client& client, int argc, char** argv);
-	void handlePass(Client& client, int argc, char** argv);
-	void handleCap(Client& client, int argc, char** argv);
-	void handleJoin(Client& client, int argc, char** argv);
-
 	int serverFd = -1;
 	int epollFd = -1;
 	std::string launchTime;

@@ -2,9 +2,10 @@ NAME := ircserv
 CXXFLAGS := -Wall -Wextra -Werror -std=c++20 -MMD -MP -ggdb -Iinc
 
 # File names.
-SRC := $(wildcard src/**.cpp)      # Source files
-OBJ := $(SRC:src/%.cpp=.build/%.o) # Object files
-DEP := $(SRC:src/%.cpp=.build/%.d) # Dependency files
+SRC := $(wildcard src/*.cpp src/*/*.cpp)	# Source files
+OBJ := $(SRC:src/%.cpp=.build/%.o)			# Object files
+DEP := $(SRC:src/%.cpp=.build/%.d)			# Dependency files
+DIR := $(sort $(dir $(OBJ)))
 
 # ANSI escape codes
 RED    := \x1b[1;31m
@@ -14,15 +15,15 @@ RESET  := \x1b[0m
 
 all: $(NAME)
 
-$(NAME): $(OBJ)
+$(NAME): $(OBJ) $(DIR)
 	@ printf '$(GREEN)Link:\x1b$(RESET) $@\n'
-	@ c++ $^ -o $@
+	@ c++ $(OBJ) -o $@
 
-.build/%.o: src/%.cpp | .build
+.build/%.o: src/%.cpp
 	@ printf '$(YELLOW)Compile:$(RESET) $<\n'
 	@ c++ -c $< -o $@ $(CXXFLAGS)
 
-.build:
+$(DIR):
 	@ mkdir -p $@
 
 clean:

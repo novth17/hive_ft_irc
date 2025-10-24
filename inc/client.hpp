@@ -30,7 +30,6 @@ public:
 	void handleUser(int argc, char** argv);
 	void handleNick(int argc, char** argv);
 	void handlePass(int argc, char** argv);
-	void handleCap(int argc, char** argv);
 	void handlePart(int argc, char** argv);
 	void handleJoin(int argc, char** argv);
 	void handlePing(int argc, char** argv);
