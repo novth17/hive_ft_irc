@@ -256,7 +256,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 	}
 
 	// Log any unimplemented commands, so that they can be added eventually.
-	log::error("Unimplemented command: ", argv[0]);
+	log::warn("Unimplemented command: ", argv[0]);
 }
 
 /**
