@@ -1,7 +1,4 @@
-#include <string.h>
-#include <string_view>
 #include <cstring>
-#include <string.h>
 #include <string_view>
 #include <sys/socket.h>
 
@@ -230,15 +227,16 @@ void Client::handleJoin(int argc, char** argv)
 			continue;
 		}
 
-		// Issue an error message if the channel is invite-only and the client isn't invited
-		if (channel->inviteOnly && !channel->isInvited(nick)) {
-			sendLine("473 ", nick, " ", channel->name, " :Cannot join channel (+i)");
-			continue;
-		}
-
 		// Issue an error if the channel member limit has been reached.
 		if (channel->isFull()) {
 			sendLine("471 ", nick, " ", name, " :Cannot join channel (+l)");
+			continue;
+		}
+
+		// Issue an error if the channel is invite-only, and the client hasn't
+		// been invited.
+		if (channel->inviteOnly) { // FIXME: Check for invite
+			sendLine("473 ", nick, " ", name, " :Cannot join channel (+i)");
 			continue;
 		}
 
