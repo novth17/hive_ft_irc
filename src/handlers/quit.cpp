@@ -11,8 +11,10 @@
 void Client::handleQuit(int argc, char** argv)
 {
 	// Check that enough parameters were provided.
-	if (argc != 1)
-		return sendLine("461 ", nick, " QUIT :Not enough parameters");
+	if (argc != 1) {
+		sendLine("461 ", nick, " QUIT :Not enough parameters");
+		return log::warn(nick, "QUIT: Has to be 1 param: [<Quit message>]");
+	}
 
 	// The <reason> for disconnecting must be prefixed with "Quit:" when sent
 	// from the server.

@@ -15,20 +15,28 @@ void Client::handleNick(int argc, char** argv)
 		return log::warn(user, "Password is not yet set");
 	}
 
-	if (argc == 0)
-		return sendLine("431 ", nick, " :No nickname given");
-	if (argc > 2)
-		return sendLine("461 ", nick, " NICK :Not enough parameters");
+	if (argc == 0) {
+		sendLine("431 ", nick, " :No nickname given");
+		return log::warn(user, "NICK: No nick name given yet");
+	}
 
-	bool nickAlreadySubmitted = !nick.empty();
 	std::string_view newNick = argv[0];
+	if (argc > 2){
+		sendLine("432 ", nick, " ", newNick, " :Erroneus nickname");
+		return log::warn(user, "NICK: Too many parameters given");
 
-	if (server->findClientByName(newNick))
-		return sendLine("433 ", nick, " ", newNick, " :Nickname is already in use");
+	}
+	bool nickAlreadySubmitted = !nick.empty();
+
+	if (server->findClientByName(newNick)) {
+		sendLine("433 ", nick, " ", newNick, " :Nickname is already in use");
+		return log::warn(user, "NICK: Nickname is same as current one. Current Nickname: ", nick);
+	}
 	if ((newNick[0] == ':') || (newNick[0] == '#')
-		|| std::string_view(newNick).find(' ') != std::string::npos)
-		return sendLine("432 ", nick, " ", newNick, " :Erroneus nickname");
-
+		|| std::string_view(newNick).find(' ') != std::string::npos) {
+		sendLine("432 ", nick, " ", newNick, " :Erroneus nickname");
+		return log::warn(user, "NICK: Invalid format of nickname");
+	}
 	if (isRegistered)
 		for (Channel* channel: channels)
 			for	(Client* member: channel->members)

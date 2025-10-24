@@ -5,7 +5,6 @@
 #include "irc.hpp"
 #include <cstring>
 
-//forced removal of a user from a channel.
 //:PUPU!p@localhost KICK #channel eve :being too rigorous
 //:<kicker>!<user>@localhost KICK <channel> <targetToKick> :<reason>
 void Client::handleKick(int argc, char** argv)
@@ -13,7 +12,7 @@ void Client::handleKick(int argc, char** argv)
     // Must have at least <channel> and <user>
     if (argc < 2) {
         sendLine("461 ", nick, " KICK :Not enough parameters");
-        return;
+		return log::warn(nick, "JOIN: Need more params or too many params: <channel> <key>");
     }
 
     std::string channelName = argv[0];
@@ -48,9 +47,10 @@ void Client::handleKick(int argc, char** argv)
     }
 
 	// Check that the sender has operator privileges on the channel.
-	if (!channel->isOperator(*this))
-		return sendLine("482 ", nick, " ", channelName, " :You're not channel operator");
-
+	if (!channel->isOperator(*this))  {
+		sendLine("482 ", nick, " ", channelName, " :You're not channel operator");
+        return log::warn("KICK: ", nick, " tried to kick but is not a operator of ", channelName);
+	}
 	//if no target found in the channel
     Client* clientToKick = channel->findClientByName(targetToKick);
     if (clientToKick == nullptr) {
@@ -68,6 +68,5 @@ void Client::handleKick(int argc, char** argv)
 
     // remove kicked dude
     channel->removeMember(*clientToKick);
-
     log::info("KICK: ", nick, " kicked ", targetToKick, " from ", channelName);
 }

@@ -11,9 +11,10 @@
 void Client::handleWho(int argc, char** argv)
 {
 	// Check that the correct number of parameters were given.
-	if (argc > 2)
-		return sendLine("461 ", nick, " WHO :Not enough parameters");
-
+	if (argc > 2) {
+		sendLine("461 ", nick, " WHO :Not enough parameters");
+		return log::warn(nick, "WHO: Not enough parameters");
+	}
 	// If the server doesn't support the WHO command with a <mask> parameter, it
 	// can send just an empty list.
 	if (argc == 0) {
@@ -39,5 +40,6 @@ void Client::handleWho(int argc, char** argv)
 			sendLine(realname);
 		}
 	}
-	return sendLine("315 ", nick, " ", argv[0], " :End of WHO list");
+	sendLine("315 ", nick, " ", argv[0], " :End of WHO list");
+	return log::info(nick, "WHO: Sent some information about the client. End of WHO list");
 }
