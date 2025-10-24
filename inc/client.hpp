@@ -1,5 +1,6 @@
 #pragma once
 
+#include <climits>
 #include <set>
 #include <string>
 #include <string_view>
@@ -74,6 +75,6 @@ public:
 	void send(const char* string = "") { send(std::string_view(string)); }
 	void send(const std::string& string) { send(std::string_view(string)); }
 
-
 	void handleRegistrationComplete();
+	bool commonChecks(const char* cmd, bool reg, int argc, int min, int max = INT_MAX);
 };

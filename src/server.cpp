@@ -32,9 +32,11 @@ Server::~Server()
 
 void Server::eventLoop(const char* host, const char* port)
 {
-	 // Ignore SIGINT.
+	// Install a signal handler for SIGINT, so that the server can be shut down
+	// gracefully with Ctrl + C.
+	static volatile sig_atomic_t caughtSignal;
 	struct sigaction sa = {};
-	sa.sa_handler = [] (int) {}; // Do-nothing function.
+	sa.sa_handler = [] (int signal) { caughtSignal = signal; };
 	sigaction(SIGINT, &sa, nullptr);
 
 	// Create epoll.
@@ -63,7 +65,7 @@ void Server::eventLoop(const char* host, const char* port)
 		// Poll available events.
 		int numberOfReadyEvents = epoll_wait(epollFd, events, MAX_EVENTS, -1);
 		if (numberOfReadyEvents == -1) {
-			if (errno == EINTR) {
+			if (errno == EINTR && caughtSignal == SIGINT) {
 				fprintf(stderr, "\r"); // Just to avoid printing ^C.
 				log::info("Interrupted by user");
 				break;
@@ -144,7 +146,7 @@ void Server::receiveFromClient(Client& client)
 
 		// Handle client disconnection.
 		} else if (bytes == 0) {
-			client.isDisconnected = true;
+			disconnectClient(client);
 
 		// Buffer received data.
 		} else {
@@ -254,7 +256,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 	}
 
 	// Log any unimplemented commands, so that they can be added eventually.
-	log::error("Unimplemented command: ", argv[0]);
+	log::warn("Unimplemented command: ", argv[0]);
 }
 
 /**
@@ -263,17 +265,6 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 bool Server::correctPassword(std::string_view pass)
 {
 	return password == pass;
-}
-
-/**
- * For any two clients, check if those clients share at least one channel.
- */
-bool Server::clientsOnSameChannel(const Client& a, const Client& b)
-{
-	for (Channel* channel: a.channels)
-		if (b.channels.find(channel) != b.channels.end())
-			return true;
-	return false;
 }
 
 /**
@@ -288,19 +279,17 @@ void Server::disconnectClient(Client& client, std::string_view reason)
 	client.sendLine("ERROR :", reason);
 
 	// Send QUIT messages to let other clients know the client disconnected.
-	// The <source> of the message is the disconnected client.
-	for (auto& [_, other]: clients)
-		if (clientsOnSameChannel(client, other))
-			other.sendLine(":", client.nick, " QUIT :", reason);
-
-	// Remove the client from all its channels.
-	for (Channel* channel: client.channels)
+	// The <source> of the message is the disconnected client. Also remove the
+	// client from all channels it's a part of.
+	for (Channel* channel: client.channels) {
+		for (Client* member: channel->members)
+			member->sendLine(":", client.fullname, " QUIT :", reason);
 		channel->removeMember(client);
+	}
 	client.channels.clear();
 
 	// Unsubscribe from epoll events for the client connection.
-	int socket = client.socket;
-	epoll_ctl(epollFd, EPOLL_CTL_DEL, socket, nullptr);
+	epoll_ctl(epollFd, EPOLL_CTL_DEL, client.socket, nullptr);
 
 	// Mark the client as disconnected. The connection is actually closed before
 	// the next iteration of the event loop.

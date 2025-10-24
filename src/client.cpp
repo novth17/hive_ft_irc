@@ -40,3 +40,31 @@ void Client::handleRegistrationComplete()
 	sendLine("003 ", nick, " :This server was created ", server->getLaunchTime());
 	sendLine("004 ", nick, " ", SERVER_NAME, " Version 1.0");
 }
+
+/**
+ * Perform common parameter checks for commands, sending any error messages if
+ * there are problems. Returns false if any of the checks failed, indicating
+ * that the calling command handler should return immediately. The maximum
+ * parameter count can be left out, in which case there's no parameter limit.
+ *
+ * @param cmd  The name of the command (e.g. "JOIN")
+ * @param reg  Whether registration is reuired to use the command
+ * @param argc The actual number of parameters
+ * @param min  The minimum number of parameters
+ * @param max  The maximum number of parameters
+ */
+bool Client::commonChecks(const char* cmd, bool reg, int argc, int min, int max)
+{
+	// Check registration.
+	if (reg && !isRegistered) {
+		sendLine("451 ", nick, " :You have not registered");
+		return false;
+	}
+
+	// Check parameter count.
+	if (argc < min || argc > max) {
+		sendLine("461 ", nick, " ", cmd, " :Not enough parameters");
+		return false;
+	}
+	return true;
+}

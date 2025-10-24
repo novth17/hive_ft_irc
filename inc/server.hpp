@@ -33,7 +33,7 @@ public:
 	void eventLoop(const char* host, const char* port);
 	bool correctPassword(std::string_view pass);
 	bool clientsOnSameChannel(const Client& a, const Client& b);
-	void disconnectClient(Client& client, std::string_view reason);
+	void disconnectClient(Client& client, std::string_view reason = "");
 	std::string getLaunchTime();
 	static std::string getTimeString();
 
