@@ -226,7 +226,13 @@ void Client::handleJoin(int argc, char** argv)
 
 		// Issue an error message if the key doesn't match.
 		if (channel->key != key) {
-			sendLine(nick, " ", name, " :Cannot join channel (+k)");
+			sendLine(nick, " ", channel->name, " :Cannot join channel (+k)");
+			continue;
+		}
+
+		// Issue an error message if the channel is invite-only and the client isn't invited
+		if (channel->inviteOnly && !channel->isInvited(nick)) {
+			sendLine(nick, " ", channel->name, " :Cannot join channel (+i)");
 			continue;
 		}
 
@@ -603,8 +609,8 @@ void Client::handleTopic(int argc, char** argv)
 	if (!channel->findClientByName(nick))
 		return sendLine("442 ", channel->name, " :You're not on that channel");
 
-	// if (channel.MODE == PROTECTED && NOT_OPERATOR)
-	// 	return sendLine("482 ", CHANNEL, " :You're not channel operator"); // Intentional grammar mistake, according to spec :)
+	if (!channel->isOperator(*this))
+		return sendLine("482 ", channel->name, " :You're not channel operator"); // Grammar mistake according to spec :)
 
 	channel->topic = argv[1];
 	channel->topicChangeStr = std::string(nick).append(" ").append(Server::getTimeString());
@@ -687,7 +693,9 @@ void Client::handleInvite(int argc, char** argv)
 
 	const std::string_view invitedName = argv[0];
 
-	if (!server->findClientByName(invitedName))
+	Client* invitedClient = server->findClientByName(invitedName);
+
+	if (!invitedClient)
 		return sendLine("406 ", invitedName, " :There was no such nickname");
 
 	Channel* channel = server->findChannelByName(argv[1]);
@@ -698,12 +706,10 @@ void Client::handleInvite(int argc, char** argv)
 	if (!channel->findClientByName(nick))
 		return sendLine("442 ", nick, " ", channel->name, " :You're not on that channel");
 
-	Client* invitedClient = channel->findClientByName(invitedName);
-
-	if (invitedClient)
+	if (channel->findClientByName(invitedName))
 		return sendLine("443 ", nick, " ", invitedName, " ", channel->name, " :is already on channel");
 
-	if (channel->inviteOnly && !channel->isOperator(*this))
+	if (!channel->isOperator(*this))
 		return sendLine("482 ", nick, " ", channel->name, " :You're not channel operator");
 
 	channel->addInvited(invitedName);
