@@ -180,7 +180,7 @@ void Client::handleMode(int argc, char** argv)
 			if (!std::isalpha(*mode))
 				return sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
 			for (; std::isalpha(*mode); mode++) {
-				if (*mode++ != 'i')
+				if (*mode != 'i')
 					sendLine("502 ", nick, " :Unknown MODE flag");
 			}
 		}
