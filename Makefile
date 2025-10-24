@@ -13,6 +13,9 @@ GREEN  := \x1b[1;32m
 YELLOW := \x1b[1;33m
 RESET  := \x1b[0m
 
+# Generate a random nick for testing with irssi.
+RANDOM_NICK := `shuf /usr/share/dict/words | grep -v "'" | head -1`
+
 all: $(NAME)
 
 $(NAME): $(OBJ) $(DIR)
@@ -43,7 +46,7 @@ leaks: all
 	valgrind --track-fds=yes ./$(NAME) 6667 secret
 
 irssi:
-	irssi -c localhost -w secret
+	irssi -c localhost -w secret -n $(RANDOM_NICK)
 
 nc:
 	nc -C localhost 6667
