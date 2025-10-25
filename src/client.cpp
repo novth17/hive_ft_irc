@@ -30,16 +30,32 @@ void Client::send(const std::string_view& string)
 	}
 }
 
+/**
+ * Send the mandatory set of messages when a clint completes registration, by
+ * providing the full set of nickname/username/password.
+ */
 void Client::handleRegistrationComplete()
 {
+	// Check that all credentials were received.
 	if (nick.empty() || user.empty() || !isPassValid)
 		return;
+
+	// Update the client's status.
 	isRegistered = true;
 	fullname = nick + "!" + user + "@" + host;
+
+	// Send welcome messages.
 	sendLine("001 ", nick, " :Welcome to the ", SERVER_NAME, " Network ", fullname);
 	sendLine("002 ", nick, " :Your host is ", SERVER_NAME, ", running version 1.0");
 	sendLine("003 ", nick, " :This server was created ", server->getLaunchTime());
 	sendLine("004 ", nick, " ", SERVER_NAME, " Version 1.0");
+
+	// Send feature advertisement messages (at least one is mandatory).
+	sendLine("005 ", nick, "CASEMAPPING=ascii :are supported by this server");
+
+	// Respond as if the LUSERS and MOTD commands had been sent.
+	handleLusers(0, nullptr);
+	handleMotd(0, nullptr);
 }
 
 /**
