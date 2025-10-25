@@ -21,11 +21,14 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 
 		// Expect either a '+' or a '-'.
 		sign = *mode++;
-		if (sign != '+' && sign != '-')
-			return sendLine("472 ", nick, " ", sign, " :is unknown mode char to me");
-		if (!std::isalpha(*mode))
-			return sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
-
+		if (sign != '+' && sign != '-') {
+			sendLine("472 ", nick, " ", sign, " :is unknown mode char to me");
+			return log::warn(" MODE: Can't regcognize mode character used by client");
+		}
+		if (!std::isalpha(*mode)) {
+			sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
+			return log::warn(" MODE: Can't regcognize mode character used by client");
+		}
 		// Iterate over the characters in the mode string.
 		for (; std::isalpha(*mode); mode++) {
 			switch (*mode) {
@@ -53,6 +56,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 							continue;
 						if (!channel.setKey(key)) {
 							sendLine("525 ", nick, " ", channel.name, " :Key is not well-formed");
+							log::warn(" MODE: Value of a key channel mode change (+k) was rejected");
 							continue;
 						}
 						argsOut += " " + std::string(key);
@@ -67,6 +71,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 						int limit;
 						if (!parseInt(nextListItem(args), limit) || limit <= 0) {
 							sendLine("696 ", nick, " ", channel.name, " l ", limit, " :Bad limit");
+							log::warn(" MODE: There was a problem with mode parameter");
 							continue;
 						} else if (limit == channel.memberLimit) {
 							continue;
@@ -86,6 +91,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 					Client* client = server->findClientByName(target);
 					if (client == nullptr) {
 						sendLine("401 ", nick, " ", target, " :No such nick/channel");
+						log::warn(" MODE: No client can be found for this nickname");
 						continue;
 					}
 
@@ -101,7 +107,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 
 				// Anything else is unrecognized.
 				default: {
-					 sendLine("502 ", nick, " :Unknown MODE flag");
+					sendLine("502 ", nick, " :Unknown MODE flag");
 				} continue;
 			}
 
@@ -168,7 +174,7 @@ void Client::handleMode(int argc, char** argv)
 		Client* client = server->findClientByName(target);
 		if (client == nullptr) {
 			sendLine("401 ", nick, " ", target, " :No such nick/channel");
-			return log::warn(" MODE: No client can be found for the supplied nickname");
+			return log::warn(" MODE: No client can be found for this nickname");
 		}
 		// Check that the target matches the client's own nickname.
 		if (client->nick != target) {
