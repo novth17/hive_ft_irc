@@ -44,6 +44,7 @@ public:
 	void handleInvite(int argc, char** argv);
 	void handleNames(int argc, char** argv);
 	void handleList(int argc, char** argv);
+	void handleLusers(int argc, char** argv);
 
 	// Send a string to the client.
 	void send(const std::string_view& string);

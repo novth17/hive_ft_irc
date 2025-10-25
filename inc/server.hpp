@@ -36,7 +36,8 @@ public:
 	void disconnectClient(Client& client, std::string_view reason = "");
 	std::string getLaunchTime();
 	static std::string getTimeString();
-
+	size_t getClientCount() const;
+	size_t getChannelCount() const;
 	ClientIterators allClients() { return {clients.begin(), clients.end()}; }
 	ChannelIterators allChannels() { return {channels.begin(), channels.end()}; }
 

@@ -259,6 +259,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 		{"INVITE", &Client::handleInvite},
 		{"NAMES", &Client::handleNames},
 		{"LIST", &Client::handleList},
+		{"LUSERS", &Client::handleLusers},
 	};
 
 	// Send the message to the handler for that command.
@@ -359,4 +360,20 @@ std::string Server::getTimeString()
 	timeString.erase(timeString.length() - 1, 1); // Removes newline
 
 	return timeString;
+}
+
+/**
+ * Get the total number of connected clients.
+ */
+size_t Server::getClientCount() const
+{
+	return clients.size();
+}
+
+/**
+ * Get the total number of active channels.
+ */
+size_t Server::getChannelCount() const
+{
+	return channels.size();
 }
