@@ -7,6 +7,9 @@
 
 /**
  * Handle PrivMsgParams.
+ * FIXME if text mesage is empty
+ * 		PRIVMSG target :
+ * 		--> 412 :No text to send
  */
 bool Client::handlePrivMsgParams(int argc, char** argv) {
 
@@ -42,7 +45,7 @@ void Client::handlePrivMsg(int argc, char** argv)
 			// Check that the channel exists.
 			Channel* channel = server->findChannelByName(target);
 			if (channel == nullptr) {
-				sendLine("403 ", nick, " ", target, " :No such channel");
+				sendLine("404 ", nick, " ", target, " :Cannot send to channel");
 				log::warn("PRIVMSG: No such channel: ", target);
 				continue;
 			}
