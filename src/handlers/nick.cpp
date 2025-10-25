@@ -12,7 +12,7 @@ void Client::handleNick(int argc, char** argv)
 {
 	if (!isPassValid) { // Must have passed the correct password first: https://datatracker.ietf.org/doc/html/rfc2812#section-3.1.1
 		sendLine("464 :Password incorrect");
-		return log::warn(user, "Password is not yet set");
+		return log::warn(user, "NICK: Password is not yet set");
 	}
 
 	if (argc == 0) {
