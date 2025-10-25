@@ -126,31 +126,36 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 void Client::handleMode(int argc, char** argv)
 {
 	// Check that enough parameters were provided.
-	if (argc < 1 || argc > 3)
-		return sendLine("461 ", nick, " MODE :Not enough parameters");
-
+	if (argc < 1 || argc > 3) {
+		sendLine("461 ", nick, " MODE :Not enough parameters");
+		return log::warn(nick, " MODE: Need more params or too many params");
+	}
 	// Check if the target is a channel.
 	char* target = argv[0];
 	if (Channel::isValidName(target)) {
 
 		// Check that the channel actually exists.
 		Channel* channel = server->findChannelByName(target);
-		if (channel == nullptr)
-			return sendLine("403 ", nick, " ", target, " :No such channel");
-
+		if (channel == nullptr) {
+			sendLine("403 ", nick, " ", target, " :No such channel");
+       		return log::warn(" MODE: No such channel: ", target);
+		}
 		// If no mode string was given, reply with the channel's current modes.
-		if (argc < 2)
-			return sendLine("324 ", nick, " ", target, " :", channel->getModes());
-
+		if (argc < 2) {
+			sendLine("324 ", nick, " ", target, " :", channel->getModes());
+			return log::info(" MODE: channel current mode: ", channel->getModes());
+		}
 		// Special case to keep irssi happy: Handle 'b' by sending an empty ban
 		// list for the channel.
-		if (std::strcmp(argv[1], "b") == 0)
-			return sendLine("368 ", nick, " ", target, " :End of channel ban list");
-
+		if (std::strcmp(argv[1], "b") == 0) {
+			sendLine("368 ", nick, " ", target, " :End of channel ban list");
+			return log::info(" MODE: End of channel ban list");
+		}
 		// Check that the client has channel operator privileges.
-		if (!channel->isOperator(*this))
-			return sendLine("482 ", nick, " ", target, " :You're not channel operator");
-
+		if (!channel->isOperator(*this)) {
+			sendLine("482 ", nick, " ", target, " :You're not channel operator");
+			return log::warn(" MODE: You don't have channel operator privileges");
+		}
 		// Parse the mode string.
 		char noArguments[1] = "";
 		char* args = argc < 3 ? noArguments : argv[2];
@@ -161,27 +166,32 @@ void Client::handleMode(int argc, char** argv)
 
 		// Check that the client exists.
 		Client* client = server->findClientByName(target);
-		if (client == nullptr)
-			return sendLine("401 ", nick, " ", target, " :No such nick/channel");
-
+		if (client == nullptr) {
+			sendLine("401 ", nick, " ", target, " :No such nick/channel");
+			return log::warn(" MODE: No client can be found for the supplied nickname");
+		}
 		// Check that the target matches the client's own nickname.
-		if (client->nick != target)
-			return sendLine("502 ", nick, " :Cant change mode for other users");
-
+		if (client->nick != target) {
+			sendLine("502 ", nick, " :Cant change mode for other users");
+			return log::warn(" MODE: Users don't match. Can't view/change modes for other users");
+		}
 		// If no mode string was given, reply with the client's current modes.
-		if (argc < 2)
-			return sendLine("221 ", nick, " :"); // No user modes implemented.
-
+		if (argc < 2) {
+			sendLine("221 ", nick, " :"); // No user modes implemented.
+			return log::warn(" MODE: No user modes implemented");
+		}
 		// User modes are not implemented, but we ignore the +i mode just to
 		// keep irssi happy.
 		char* mode = argv[1];
 		while (*mode) {
 			mode += *mode == '+' || *mode == '-';
-			if (!std::isalpha(*mode))
-				return sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
+			if (!std::isalpha(*mode)) {
+				sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
+				return log::warn(" MODE: Can't regcognize mode character used by client");
+			}
 			for (; std::isalpha(*mode); mode++) {
 				if (*mode != 'i')
-					sendLine("502 ", nick, " :Unknown MODE flag");
+					sendLine("501 ", nick, " :Unknown MODE flag");
 			}
 		}
 	}

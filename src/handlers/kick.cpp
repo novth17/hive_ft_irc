@@ -12,7 +12,7 @@ void Client::handleKick(int argc, char** argv)
     // Must have at least <channel> and <user>
     if (argc < 2) {
         sendLine("461 ", nick, " KICK :Not enough parameters");
-		return log::warn(nick, "JOIN: Need more params or too many params: <channel> <key>");
+		return log::warn(nick, " KICK: Need more params or too many params");
     }
 
     std::string channelName = argv[0];
