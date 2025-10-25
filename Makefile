@@ -20,11 +20,11 @@ all: $(NAME)
 
 $(NAME): $(OBJ) $(DIR)
 	@ printf '$(GREEN)Link:\x1b$(RESET) $@\n'
-	@ $(CXX) $(OBJ) -o $@
+	@ c++ $(OBJ) -o $@
 
 .build/%.o: src/%.cpp
 	@ printf '$(YELLOW)Compile:$(RESET) $<\n'
-	@ $(CXX) -c $< -o $@ $(CXXFLAGS)
+	@ c++ -c $< -o $@ $(CXXFLAGS)
 
 $(DIR):
 	@ mkdir -p $@
