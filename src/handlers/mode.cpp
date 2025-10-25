@@ -23,11 +23,11 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 		sign = *mode++;
 		if (sign != '+' && sign != '-') {
 			sendLine("472 ", nick, " ", sign, " :is unknown mode char to me");
-			return log::warn(" MODE: Can't regcognize mode character used by client");
+			return log::warn("MODE: Can't regcognize mode character used by client");
 		}
 		if (!std::isalpha(*mode)) {
 			sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
-			return log::warn(" MODE: Can't regcognize mode character used by client");
+			return log::warn("MODE: Can't regcognize mode character used by client");
 		}
 		// Iterate over the characters in the mode string.
 		for (; std::isalpha(*mode); mode++) {
@@ -56,7 +56,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 							continue;
 						if (!channel.setKey(key)) {
 							sendLine("525 ", nick, " ", channel.name, " :Key is not well-formed");
-							log::warn(" MODE: Value of a key channel mode change (+k) was rejected");
+							log::warn("MODE: Value of a key channel mode change (+k) was rejected");
 							continue;
 						}
 						argsOut += " " + std::string(key);
@@ -71,7 +71,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 						int limit;
 						if (!parseInt(nextListItem(args), limit) || limit <= 0) {
 							sendLine("696 ", nick, " ", channel.name, " l ", limit, " :Bad limit");
-							log::warn(" MODE: There was a problem with mode parameter");
+							log::warn("MODE: There was a problem with mode parameter");
 							continue;
 						} else if (limit == channel.memberLimit) {
 							continue;
@@ -91,7 +91,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 					Client* client = server->findClientByName(target);
 					if (client == nullptr) {
 						sendLine("401 ", nick, " ", target, " :No such nick/channel");
-						log::warn(" MODE: No client can be found for this nickname");
+						log::warn("MODE: No client can be found for this nickname");
 						continue;
 					}
 
@@ -191,7 +191,6 @@ void Client::handleMode(int argc, char** argv)
 			mode += *mode == '+' || *mode == '-';
 			if (!std::isalpha(*mode)) {
 				sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
-				return log::warn("MODE: Can't regcognize mode character used by client");
 			}
 			for (; std::isalpha(*mode); mode++) {
 				if (*mode != 'i')
