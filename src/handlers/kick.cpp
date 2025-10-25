@@ -10,17 +10,35 @@
  */
 void Client::handleKick(int argc, char** argv)
 {
-	// Must have at least <channel> and <user>
-	if (argc < 2)
-		return sendLine("461 ", nick, " KICK :Not enough parameters");
+    // Must have at least <channel> and <user>
+    if (argc < 2) {
+        sendLine("461 ", nick, " KICK :Not enough parameters");
+		return log::warn(nick, " KICK: Need more params or too many params");
+    }
 
-	// Find the target channel.
-	char* channelName = argv[0];
-	Channel* channel = server->findChannelByName(channelName);
-	if (channel == nullptr) {
-		log::warn("KICK: No such channel: ", channelName);
-		return sendLine("403 ", nick, " ", channelName, " :No such channel");
-	}
+    std::string channelName = argv[0];
+    std::string targetToKick = argv[1];
+
+    // build reason string coz it can be many args
+    std::string reason;
+    if (argc >= 3) {
+		for (int i = 2; i < argc; ++i) {
+			reason += (i > 2 ? " " : ""); // add a space before everything except the first word
+			reason += argv[i];
+		}
+        if (!reason.empty() && reason[0] == ':')
+            reason.erase(0, 1);
+    } else {
+        reason = "No reason. I just kicked you for fun";
+    }
+
+    // find channel
+    Channel* channel = server->findChannelByName(channelName);
+    if (!channel) {
+        sendLine("403 ", nick, " ", channelName, " :No such channel");
+        log::warn("KICK: No such channel: ", channelName);
+        return;
+    }
 
 	// Check that the sender is in the channel.
 	if (!channel->isMember(*this)) {

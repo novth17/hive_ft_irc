@@ -7,9 +7,6 @@
 
 /**
  * Handle PrivMsgParams.
- * FIXME if text mesage is empty
- * 		PRIVMSG target :
- * 		--> 412 :No text to send
  */
 bool Client::handlePrivMsgParams(int argc, char** argv) {
 
@@ -21,7 +18,7 @@ bool Client::handlePrivMsgParams(int argc, char** argv) {
 		return false;
 	}
 
-	if (argc < 2) {
+	if (argc < 2 || !argv[1] || !*argv[1]) {
 		sendLine("412 " , nick, " :No text to send");
 		log::warn("PRIVMSG: ", "No recipient parameter. NICK: ", nick);
 		return false;
@@ -69,6 +66,12 @@ void Client::handlePrivMsg(int argc, char** argv)
 
 		// Otherwise, the target is another client.
 		} else {
+			// Check that the client is registered.
+			if (!isRegistered) {
+				sendLine("451 ", nick, " :You have not registered");
+				log::warn(nick, " PRIVMSG: User is not registered yet");
+				continue;
+			}
 			Client* client = server->findClientByName(target);
 			if (client == nullptr) {
 				sendLine("401 ", nick, " ", target, " :No such nick/channel");

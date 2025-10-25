@@ -49,6 +49,7 @@ public:
 	static bool isValidName(std::string_view name);
 	Client* findClientByName(std::string_view name);
 
+
 private:
 	std::set<Client*> invited;	// All nicknames invited to this channel
 };
