@@ -97,7 +97,7 @@ void Client::handleJoin(int argc, char** argv)
 		// Send the topic (with timestamp) if there is one.
 		if (!channel->topic.empty()) {
 			sendNumeric("332", name, " :", channel->topic);
-			sendNumeric("333", channel->name, " ", channel->topicChangeStr);
+			sendNumeric("333", channel->name, " :", channel->topicChangeStr);
 			log::info(nick, " JOIN: Sent the topic");
 		}
 

@@ -351,19 +351,23 @@ Client* Server::findClientByName(std::string_view name)
 	return nullptr;
 }
 
+/**
+ * Get a text timestamp of when the server was started.
+ */
 std::string Server::getLaunchTime()
 {
 	return launchTime;
 }
 
+/**
+ * Get the current time as a string.
+ */
 std::string Server::getTimeString()
 {
 	time_t _tm = time(NULL);
 	struct tm* curtime = localtime(&_tm);
-
 	std::string timeString = asctime(curtime);
-	timeString.erase(timeString.length() - 1, 1); // Removes newline
-
+	timeString.pop_back(); // Remove newline.
 	return timeString;
 }
 
