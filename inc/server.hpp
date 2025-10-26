@@ -30,6 +30,7 @@ public:
 	Channel* findChannelByName(std::string_view name);
 	Client* findClientByName(std::string_view name);
 	Channel* newChannel(const std::string& name);
+	Client& newClient(int fd, std::string_view host);
 	void eventLoop(const char* host, const char* port);
 	bool correctPassword(std::string_view pass);
 	bool clientsOnSameChannel(const Client& a, const Client& b);

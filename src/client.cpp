@@ -11,6 +11,16 @@
 #include "log.hpp"
 
 /**
+ * Create a new Client.
+ */
+Client::Client(Server& server, int socket, std::string_view host)
+	: server(&server),
+	  socket(socket),
+	  host(host)
+{
+}
+
+/**
  * Send a string of text to the client. All the other variants of the
  * Client::send method call this one to do their business.
  */

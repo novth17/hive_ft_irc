@@ -12,6 +12,10 @@ class Channel;
 class Client
 {
 public:
+	Client(Server& server, int fd, std::string_view host);
+	~Client() = default;
+
+	Server* server = nullptr;		// Pointer to the server object
 	int socket = -1;				// The socket used for the client's connection
 	std::string nick;				// The client's nickname
 	std::string user;				// The client's user name
@@ -24,7 +28,6 @@ public:
 	bool isRegistered = false;		// Whether the client completed registration
 	bool isPassValid = false;		// Whether the client gave the correct password
 	bool isDisconnected = false;	// Set to true when the client is disconnected
-	Server* server = nullptr;		// Pointer to the server object
 	std::set<Channel*>	channels;	// All channels the client is joined to
 
 	void setChannelMode(Channel& channel, char* modes, char* args);

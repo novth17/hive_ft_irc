@@ -90,10 +90,7 @@ void Server::eventLoop(const char* host, const char* port)
 					fail("Failed to accept connection: ", strerror(errno));
 
 				// Register the connection with epoll.
-				Client& client = clients[clientFd];
-				client.server = this;
-				client.socket = clientFd;
-				client.host = inet_ntoa(address.sin_addr);
+				Client& client = newClient(clientFd, inet_ntoa(address.sin_addr));
 				epollEvent.events = EPOLLIN | EPOLLOUT | EPOLLET;
 				epollEvent.data.fd = clientFd;
 				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
@@ -334,8 +331,15 @@ Channel* Server::findChannelByName(std::string_view name)
 Channel* Server::newChannel(const std::string& name)
 {
 	log::info("Creating new channel ", name);
-	auto result = channels.insert(std::make_pair(name, Channel(name)));
-	return &result.first->second;
+	return &channels.insert({name, Channel(name)}).first->second;
+}
+
+/**
+ * Create a new client from a connection file descriptor and a host address.
+ */
+Client& Server::newClient(int fd, std::string_view host)
+{
+	return clients.insert({fd, Client(*this, fd, host)}).first->second;
 }
 
 /**
