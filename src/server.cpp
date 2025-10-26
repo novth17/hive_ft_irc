@@ -95,7 +95,7 @@ void Server::eventLoop(const char* host, const char* port)
 				epollEvent.data.fd = clientFd;
 				if (epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &epollEvent) == -1)
 					fail("Failed to add client socket to epoll: ", strerror(errno));
-				log::info("Client connected: ", client.host);
+				log::info("Client connected: ", client.getHost());
 
 			// Exchange data with a client.
 			} else {
@@ -117,9 +117,9 @@ void Server::eventLoop(const char* host, const char* port)
 		// send/receive part of the event loop, when the socket is still
 		// actively used.
 		for (auto i = clients.begin(); i != clients.end();) {
-			if (i->second.isDisconnected) {
+			if (i->second.isDisconnected()) {
 				close(i->first);
-				log::info("Client disconnected: ", i->second.host);
+				log::info("Client disconnected: ", i->second.getHost());
 				i = clients.erase(i);
 			} else {
 				++i;
@@ -310,7 +310,7 @@ void Server::disconnectClient(Client& client, std::string_view reason)
 
 	// Mark the client as disconnected. The connection is actually closed before
 	// the next iteration of the event loop.
-	client.isDisconnected = true;
+	client.setDisconnected();
 }
 
 /**

@@ -45,6 +45,30 @@ void Client::clearChannels()
 }
 
 /**
+ * Get the client's hostname.
+ */
+std::string_view Client::getHost() const
+{
+	return host;
+}
+
+/**
+ * Check if the client has been marked as disconnected.
+ */
+bool Client::isDisconnected() const
+{
+	return disconnected;
+}
+
+/**
+ * Mark the client as disconnected.
+ */
+void Client::setDisconnected()
+{
+	disconnected = true;
+}
+
+/**
  * Send a string of text to the client. All the other variants of the
  * Client::send method call this one to do their business.
  */

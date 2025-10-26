@@ -27,23 +27,25 @@ private:
 	int socket = -1;				// The socket used for the client's connection
 	std::string output;				// Buffered data for send()
 	std::set<Channel*>	channels;	// All channels the client is joined to
+	std::string host;				// The client's host IP address
+	bool isRegistered = false;		// Whether the client completed registration
+	bool isPassValid = false;		// Whether the client gave the correct password
+	bool disconnected = false;		// Set to true when the client is disconnected
 public:
 	std::string nick;				// The client's nickname
 	std::string user;				// The client's user name
 	std::string realname;			// The client's real name
-	std::string host;				// The client's host IP address
 	std::string fullname;			// The full nick!user@host name
 
 	std::string input;				// Buffered data from recv()
-	bool isRegistered = false;		// Whether the client completed registration
-	bool isPassValid = false;		// Whether the client gave the correct password
-	bool isDisconnected = false;	// Set to true when the client is disconnected
 
 	int getSocket() const;
 	ClientChannelIterators allChannels();
-
 	void setChannelMode(Channel& channel, char* modes, char* args);
 	void clearChannels();
+	std::string_view getHost() const;
+	bool isDisconnected() const;
+	void setDisconnected();
 
 	void handleUser(int argc, char** argv);
 	void handleNick(int argc, char** argv);
