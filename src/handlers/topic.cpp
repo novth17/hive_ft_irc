@@ -56,5 +56,5 @@ void Client::handleTopic(int argc, char** argv)
 
 	// Notify all channel members (including the sender) of the change.
 	for (Client* member: channel->members)
-		member->sendLine(":", nick, " TOPIC ", channel->name, " :", channel->topic);
+		member->sendLine(":", fullname, " TOPIC ", channel->name, " :", channel->topic);
 }
