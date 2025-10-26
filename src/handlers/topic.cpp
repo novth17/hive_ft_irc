@@ -53,6 +53,6 @@ void Client::handleTopic(int argc, char** argv)
 	channel->setTopic(argv[1], *this);
 
 	// Notify all channel members (including the sender) of the change.
-	for (Client* member: channel->members)
+	for (Client* member: channel->allMembers())
 		member->sendLine(":", fullname, " TOPIC ", channel->getName(), " :", channel->getTopic());
 }

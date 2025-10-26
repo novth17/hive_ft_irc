@@ -27,7 +27,7 @@ void Client::handleJoin(int argc, char** argv)
 		// Remove the client from all channels, also notifying all channel
 		// members (including the departing client).
 		for (Channel* channel: channels) {
-			for (Client* member: channel->members)
+			for (Client* member: channel->allMembers())
 				member->sendLine(":", fullname, " PART ", channel->getName(), " :");
 			channel->removeMember(*this);
 			log::info(nick, " left channel ", channel->getName());
@@ -100,7 +100,7 @@ void Client::handleJoin(int argc, char** argv)
 
 		// Send a list of members in the channel.
 		send(":", server->getHostname(), " 353 ", fullname, " = ", name, " :");
-		for (Client* member: channel->members) {
+		for (Client* member: channel->allMembers()) {
 			const char* prefix = channel->isOperator(*member) ? "@" : "";
 			send(prefix, member->nick, " ");
 		}
@@ -109,7 +109,7 @@ void Client::handleJoin(int argc, char** argv)
 		log::info("Sent a list of members in the channel");
 
 		// Notify other members of the channel that someone joined.
-		for (Client* member: channel->members)
+		for (Client* member: channel->allMembers())
 			if (member != this)
 				member->sendLine(":", fullname, " JOIN ", channel->getName());
 	}

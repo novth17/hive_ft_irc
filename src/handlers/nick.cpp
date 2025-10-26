@@ -46,7 +46,7 @@ void Client::handleNick(int argc, char** argv)
 	if (isRegistered) {
 		sendLine(":", fullname, " NICK ", newNick);
 		for (Channel* channel: channels)
-			for (Client* member: channel->members)
+			for (Client* member: channel->allMembers())
 				if (member != this)
 					member->sendLine(":", fullname, " NICK ", newNick);
 	}

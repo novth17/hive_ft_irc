@@ -22,7 +22,7 @@ void Client::handleNames(int argc, char** argv)
 
 			// List the channel's members.
 			send(":", server->getHostname(), " 353 ", fullname, " = ", channelName, " :");
-			for (Client* member: channel->members) {
+			for (Client* member: channel->allMembers()) {
 				const char* prefix = channel->isOperator(*member) ? "@" : "";
 				send(prefix, member->nick, " ");
 			}

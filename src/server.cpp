@@ -302,7 +302,7 @@ void Server::disconnectClient(Client& client, std::string_view reason)
 	// The <source> of the message is the disconnected client. Also remove the
 	// client from all channels it's a part of.
 	for (Channel* channel: client.channels) {
-		for (Client* member: channel->members)
+		for (Client* member: channel->allMembers())
 			member->sendLine(":", client.fullname, " QUIT :", reason);
 		channel->removeMember(client);
 	}

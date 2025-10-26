@@ -8,14 +8,18 @@
 class Client;
 class Server;
 
+struct MemberIterators
+{
+	std::set<Client*>::iterator first, last;
+	auto begin() { return first; }
+	auto end() { return last; }
+};
+
 class Channel
 {
 public:
 	explicit Channel(std::string_view name);
 	~Channel() = default;
-
-	std::set<Client*> members;		// All clients joined to this channel
-	std::set<Client*> operators;	// All clients with operator privileges
 
 	bool isMember(Client& client) const;
 	void addMember(Client& client);
@@ -30,6 +34,7 @@ public:
 	bool setKey(std::string_view newKey);
 	void removeKey();
 
+	MemberIterators allMembers();
 	int getMemberLimit() const;
 	void setMemberLimit(int limit);
 	bool isFull() const;
@@ -63,6 +68,8 @@ private:
 	std::string topic;				// The current topic
 	std::string topicChangeStr;		// The nick of the person who last changed topic plus a timestamp
 	std::string key;				// Key for the +k mode (empty = no key)
+	std::set<Client*> members;		// All clients joined to this channel
+	std::set<Client*> operators;	// All clients with operator privileges
 	std::set<Client*> invited;		// All nicknames invited to this channel
 	bool inviteOnly = false;		// Whether the +i mode is set
 	bool topicRestricted = false;	// Whether the +t mode is set

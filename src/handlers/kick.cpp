@@ -49,7 +49,7 @@ void Client::handleKick(int argc, char** argv)
 		}
 
 		// Broadcast kick message.
-		for (Client* member: channel->members) {
+		for (Client* member: channel->allMembers()) {
 			member->send(":", fullname, " ");
 			member->send("KICK ", channelName, " ", targetName);
 			member->sendLine(" :", reason);

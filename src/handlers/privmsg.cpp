@@ -36,7 +36,7 @@ void Client::handlePrivMsg(int argc, char** argv)
 			}
 
 			// Broadcast the message to all channel members.
-			for (Client* member: channel->members)
+			for (Client* member: channel->allMembers())
 				if (member != this)
 					member->sendLine(":", fullname, " PRIVMSG ", target, " :", message);
 

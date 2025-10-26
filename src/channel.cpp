@@ -153,6 +153,14 @@ void Channel::removeKey()
 }
 
 /**
+ * Get an iterator pair over all channel members.
+ */
+MemberIterators Channel::allMembers()
+{
+	return {members.begin(), members.end()};
+}
+
+/**
  * Get the channel member limit.
  */
 int Channel::getMemberLimit() const
