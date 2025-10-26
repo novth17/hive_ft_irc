@@ -25,7 +25,7 @@ void Client::handleWho(int argc, char** argv)
 			// client is not joined to any channels.
 			std::string_view channel = "*";
 			if (!client.channels.empty())
-				channel = (*client.channels.begin())->name;
+				channel = (*client.channels.begin())->getName();
 
 			// Send some information about the client.
 			send(":", server->getHostname(), " 351 ", nick, " ");

@@ -52,7 +52,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 						if (*key != '\0' && key == channel.key)
 							continue;
 						if (!channel.setKey(key)) {
-							sendNumeric("525", channel.name, " :Key is not well-formed");
+							sendNumeric("525", channel.getName(), " :Key is not well-formed");
 							continue;
 						}
 						argsOut += " " + std::string(key);
@@ -66,7 +66,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 					if (sign == '+') {
 						int limit;
 						if (!parseInt(nextListItem(args), limit) || limit <= 0) {
-							sendNumeric("696", channel.name, " l ", limit, " :Bad limit");
+							sendNumeric("696", channel.getName(), " l ", limit, " :Bad limit");
 							continue;
 						} else if (limit == channel.memberLimit) {
 							continue;
@@ -117,7 +117,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 	// Broadcast a message to all other channel members containing only the
 	// modes that were actually applied.
 	for (Client* member: channel.members)
-		member->sendLine(":", fullname, " MODE ", channel.name, " ", modeOut, argsOut);
+		member->sendLine(":", fullname, " MODE ", channel.getName(), " ", modeOut, argsOut);
 }
 
 /**

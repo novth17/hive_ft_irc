@@ -25,36 +25,34 @@ void Client::handleTopic(int argc, char** argv)
 	// Check that the client is a member of the channel.
 	if (!channel->isMember(*this)) {
 		log::warn(nick, " TOPIC: You're not on that channel");
-		return sendNumeric("442", channel->name, " :You're not on that channel");
+		return sendNumeric("442", channel->getName(), " :You're not on that channel");
 	}
 
 	// Query the current topic.
 	if (argc == 1) {
 
 		// Check if the topic is not set.
-		if (channel->topic.empty()) {
+		if (channel->hasTopic()) {
 			log::warn(nick, " TOPIC: Channel's topic is empty");
-			return sendNumeric("331", channel->name, " :No topic is set");
+			return sendNumeric("331", channel->getName(), " :No topic is set");
 		}
 
 		// Reply with the current topic.
-		sendNumeric("332", channel->name, " :", channel->topic);
-		sendNumeric("333", channel->name, " :", channel->topicChangeStr);
-		return log::info("Sent topic: ", channel->topic);
+		sendNumeric("332", channel->getName(), " :", channel->getTopic());
+		sendNumeric("333", channel->getName(), " :", channel->topicChangeStr);
+		return log::info("Sent topic: ", channel->getTopic());
 	}
 
 	// Check that the client has permissions to change the topic.
 	if (channel->restrictTopic && !channel->isOperator(*this)) {
-        log::warn("TOPIC: ", nick, " tried to change topic but is not a operator of ", channel->name);
-		return sendNumeric("482", channel->name, " :You're not channel operator");
+        log::warn("TOPIC: ", nick, " tried to change topic but is not a operator of ", channel->getName());
+		return sendNumeric("482", channel->getName(), " :You're not channel operator");
 	}
 
 	// Change the topic.
-	channel->topic = argv[1];
-	channel->topicChangeStr = nick + " " + Server::getTimeString();
-	log::info(nick, " changed topic of ", channel->name, " to: ", channel->topic);
+	channel->setTopic(argv[1], *this);
 
 	// Notify all channel members (including the sender) of the change.
 	for (Client* member: channel->members)
-		member->sendLine(":", fullname, " TOPIC ", channel->name, " :", channel->topic);
+		member->sendLine(":", fullname, " TOPIC ", channel->getName(), " :", channel->getTopic());
 }

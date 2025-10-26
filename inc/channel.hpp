@@ -10,10 +10,9 @@ class Server;
 class Channel
 {
 public:
+	Channel(Server& server, std::string_view name);
+	~Channel() = default;
 
-	char symbol = '=';				// The channel symbol (one of '=', '@', '*')
-	std::string name;				// The name of the channel
-	std::string topic;				// The current topic
 	std::set<Client*> members;		// All clients joined to this channel
 	std::set<Client*> operators;	// All clients with operator privileges
 	Server* server = nullptr;		// Pointer to the server object.
@@ -49,7 +48,14 @@ public:
 	static bool isValidName(std::string_view name);
 	Client* findClientByName(std::string_view name);
 
+	std::string_view getName() const;
+
+	bool hasTopic() const;
+	std::string_view getTopic() const;
+	void setTopic(std::string_view newTopic, Client& client);
 
 private:
-	std::set<Client*> invited;	// All nicknames invited to this channel
+	std::string name;				// The name of the channel
+	std::string topic;				// The current topic
+	std::set<Client*> invited;		// All nicknames invited to this channel
 };

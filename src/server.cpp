@@ -133,7 +133,7 @@ void Server::eventLoop(const char* host, const char* port)
 		// iteration of the event loop.
 		for (auto i = channels.begin(); i != channels.end();) {
 			if (i->second.isEmpty()) {
-				log::info("Removed empty channel ", i->second.name);
+				log::info("Removed empty channel ", i->second.getName());
 				i = channels.erase(i);
 			} else {
 				++i;
@@ -323,7 +323,7 @@ void Server::disconnectClient(Client& client, std::string_view reason)
 Channel* Server::findChannelByName(std::string_view name)
 {
 	for (auto& [channelName, channel]: channels)
-		if (channel.name == name)
+		if (channel.getName() == name)
 			return &channel;
 	return nullptr;
 }
@@ -334,10 +334,8 @@ Channel* Server::findChannelByName(std::string_view name)
 Channel* Server::newChannel(const std::string& name)
 {
 	log::info("Creating new channel ", name);
-	Channel* channel = &channels[name];
-	channel->server = this;
-	channel->name = name;
-	return channel;
+	auto result = channels.insert(std::make_pair(name, Channel(*this, name)));
+	return &result.first->second;
 }
 
 /**

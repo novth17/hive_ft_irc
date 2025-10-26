@@ -3,6 +3,15 @@
 #include "utility.hpp"
 
 /**
+ * Make a new channel.
+ */
+Channel::Channel(Server& server, std::string_view name)
+	: server(&server),
+	  name(name)
+{
+}
+
+/**
  * Check if a client is a member of this channel.
  */
 bool Channel::isMember(Client& client) const
@@ -195,8 +204,44 @@ bool Channel::isEmpty() const
 	return members.empty();
 }
 
+/**
+ * Get the number of clients joined to the channel.
+ */
 int Channel::getMemberCount() const
 {
 	return static_cast<int>(members.size());
 }
- 
+
+/**
+ * Get the name of the channel, including the '#' prefix.
+ */
+std::string_view Channel::getName() const
+{
+	return name;
+}
+
+/**
+ * Check if the channel currently has a topic.
+ */
+bool Channel::hasTopic() const
+{
+	return !topic.empty();
+}
+
+/**
+ * Get the current topic (or an empty string if there's none).
+ */
+std::string_view Channel::getTopic() const
+{
+	return topic;
+}
+
+/**
+ * Set the current topic. Also updates the topic change nickname and timestamp.
+ */
+void Channel::setTopic(std::string_view newTopic, Client& client)
+{
+	topic = newTopic;
+	topicChangeStr = client.nick + " " + Server::getTimeString();
+	log::info(client.nick, " changed topic of ", name, " to: ", newTopic);
+}

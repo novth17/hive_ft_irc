@@ -28,9 +28,9 @@ void Client::handleJoin(int argc, char** argv)
 		// members (including the departing client).
 		for (Channel* channel: channels) {
 			for (Client* member: channel->members)
-				member->sendLine(":", fullname, " PART ", channel->name, " :");
+				member->sendLine(":", fullname, " PART ", channel->getName(), " :");
 			channel->removeMember(*this);
-			log::info(nick, " left channel ", channel->name);
+			log::info(nick, " left channel ", channel->getName());
 		}
 		return channels.clear();
 	}
@@ -92,15 +92,14 @@ void Client::handleJoin(int argc, char** argv)
 		log::info(nick, " JOIN: a JOIN message was sent to the joining client");
 
 		// Send the topic (with timestamp) if there is one.
-		if (!channel->topic.empty()) {
-			sendNumeric("332", name, " :", channel->topic);
-			sendNumeric("333", channel->name, " :", channel->topicChangeStr);
+		if (!channel->hasTopic()) {
+			sendNumeric("332", name, " :", channel->getTopic());
+			sendNumeric("333", channel->getName(), " :", channel->topicChangeStr);
 			log::info(nick, " JOIN: Sent the topic");
 		}
 
 		// Send a list of members in the channel.
-		send(":", server->getHostname(), " 353 ", fullname, " ");
-		send(channel->symbol, " ", name, " :");
+		send(":", server->getHostname(), " 353 ", fullname, " = ", name, " :");
 		for (Client* member: channel->members) {
 			const char* prefix = channel->isOperator(*member) ? "@" : "";
 			send(prefix, member->nick, " ");
@@ -112,6 +111,6 @@ void Client::handleJoin(int argc, char** argv)
 		// Notify other members of the channel that someone joined.
 		for (Client* member: channel->members)
 			if (member != this)
-				member->sendLine(":", fullname, " JOIN ", channel->name);
+				member->sendLine(":", fullname, " JOIN ", channel->getName());
 	}
 }
