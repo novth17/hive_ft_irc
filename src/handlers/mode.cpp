@@ -40,9 +40,9 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 
 				// +t: Toggle restrict topic mode.
 				case 't': {
-					if (channel.restrictTopic == (sign == '+'))
+					if (channel.isTopicRestricted() == (sign == '+'))
 						continue;
-					channel.restrictTopic = sign == '+';
+					channel.setTopicRestricted(sign == '+');
 				} break;
 
 				// +k: Set or remove the channel key.

@@ -44,7 +44,7 @@ void Client::handleTopic(int argc, char** argv)
 	}
 
 	// Check that the client has permissions to change the topic.
-	if (channel->restrictTopic && !channel->isOperator(*this)) {
+	if (channel->isTopicRestricted() && !channel->isOperator(*this)) {
         log::warn("TOPIC: ", nick, " tried to change topic but is not a operator of ", channel->getName());
 		return sendNumeric("482", channel->getName(), " :You're not channel operator");
 	}

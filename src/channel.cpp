@@ -104,7 +104,7 @@ std::string Channel::getModes() const
 	std::string modes;
 	if (inviteOnly)
 		modes += "i";
-	if (restrictTopic)
+	if (topicRestricted)
 		modes += "t";
 	if (!key.empty())
 		modes += "k";
@@ -275,4 +275,21 @@ void Channel::setTopic(std::string_view newTopic, Client& client)
 	topic = newTopic;
 	topicChangeStr = client.nick + " " + Server::getTimeString();
 	log::info(client.nick, " changed topic of ", name, " to: ", newTopic);
+}
+
+/**
+ * Get whether or not the topic is restricted (meaning it can only be changed by
+ * a channel operator).
+ */
+bool Channel::isTopicRestricted() const
+{
+	return topicRestricted;
+}
+
+/**
+ * Set whether or not the topic is restricted.
+ */
+void Channel::setTopicRestricted(bool enable)
+{
+	topicRestricted = enable;
 }
