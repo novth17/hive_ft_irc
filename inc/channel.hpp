@@ -10,16 +10,14 @@ class Server;
 class Channel
 {
 public:
-	Channel(Server& server, std::string_view name);
+	explicit Channel(std::string_view name);
 	~Channel() = default;
 
 	std::set<Client*> members;		// All clients joined to this channel
 	std::set<Client*> operators;	// All clients with operator privileges
-	Server* server = nullptr;		// Pointer to the server object.
 	std::string topicChangeStr;		// The nick of the person who last changed topic plus a timestamp
 	bool inviteOnly = false;		// Whether the +i mode is set
 	bool restrictTopic = false;		// Whether the +t mode is set
-	std::string key;				// Key for the +k mode (empty = no key)
 	int memberLimit = 0;			// Limit for the +l mode (0 = no limit)
 
 	bool isMember(Client& client) const;
@@ -30,6 +28,8 @@ public:
 	void addOperator(Client& client);
 	void removeOperator(Client& client);
 
+	bool hasKey() const;
+	std::string_view getKey() const;
 	bool setKey(std::string_view newKey);
 	void removeKey();
 
@@ -57,5 +57,6 @@ public:
 private:
 	std::string name;				// The name of the channel
 	std::string topic;				// The current topic
+	std::string key;				// Key for the +k mode (empty = no key)
 	std::set<Client*> invited;		// All nicknames invited to this channel
 };

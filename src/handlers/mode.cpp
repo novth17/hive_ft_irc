@@ -49,7 +49,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 				case 'k': {
 					if (sign == '+') {
 						char* key = nextListItem(args);
-						if (*key != '\0' && key == channel.key)
+						if (*key != '\0' && key == channel.getKey())
 							continue;
 						if (!channel.setKey(key)) {
 							sendNumeric("525", channel.getName(), " :Key is not well-formed");

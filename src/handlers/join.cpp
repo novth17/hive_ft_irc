@@ -62,7 +62,7 @@ void Client::handleJoin(int argc, char** argv)
 			continue;
 
 		// Issue an error message if the key doesn't match.
-		if (channel->key != key) {
+		if (channel->getKey() != key) {
 			log::warn(nick, " JOIN: Cannot join channel, channel's key not match");
 			sendNumeric("475", name, " :Cannot join channel (+k)");
 			continue;

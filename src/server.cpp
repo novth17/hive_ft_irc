@@ -334,7 +334,7 @@ Channel* Server::findChannelByName(std::string_view name)
 Channel* Server::newChannel(const std::string& name)
 {
 	log::info("Creating new channel ", name);
-	auto result = channels.insert(std::make_pair(name, Channel(*this, name)));
+	auto result = channels.insert(std::make_pair(name, Channel(name)));
 	return &result.first->second;
 }
 

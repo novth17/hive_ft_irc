@@ -5,9 +5,8 @@
 /**
  * Make a new channel.
  */
-Channel::Channel(Server& server, std::string_view name)
-	: server(&server),
-	  name(name)
+Channel::Channel(std::string_view name)
+	: name(name)
 {
 }
 
@@ -112,6 +111,22 @@ std::string Channel::getModes() const
 	if (memberLimit > 0)
 		modes += "l " + std::to_string(memberLimit);
 	return modes.empty() ? "" : "+" + modes;
+}
+
+/**
+ * Check if a channel has a key (channels don't by default).
+ */
+bool Channel::hasKey() const
+{
+	return !key.empty();
+}
+
+/**
+ * Get the channel key.
+ */
+std::string_view Channel::getKey() const
+{
+	return key;
 }
 
 /**
