@@ -77,7 +77,7 @@ void Client::handleJoin(int argc, char** argv)
 
 		// Issue an error if the channel is invite-only, and the client hasn't
 		// been invited.
-		if (channel->inviteOnly && !channel->isInvited(*this)) {
+		if (channel->isInviteOnly() && !channel->isInvited(*this)) {
 			log::warn(nick, " JOIN: Cannot join channel, channel is invite-only");
 			sendNumeric("473", name, " :Cannot join channel (+i)");
 			continue;

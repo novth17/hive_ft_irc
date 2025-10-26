@@ -32,9 +32,9 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 
 				// +i: Toggle invite-only mode.
 				case 'i': {
-					if (channel.inviteOnly == (sign == '+'))
+					if (channel.isInviteOnly() == (sign == '+'))
 						continue;
-					channel.inviteOnly = sign == '+';
+					channel.setInviteOnly(sign == '+');
 					channel.resetInvited();
 				} break;
 

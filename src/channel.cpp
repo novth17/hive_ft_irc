@@ -170,6 +170,22 @@ void Channel::removeMemberLimit()
 }
 
 /**
+ * Check if the channel is invite-only (mode +i).
+ */
+bool Channel::isInviteOnly() const
+{
+	return inviteOnly;
+}
+
+/**
+ * Set whether a channel is invite-only.
+ */
+void Channel::setInviteOnly(bool enable)
+{
+	inviteOnly = enable;
+}
+
+/**
  * Check if a client is on the invite list.
  */
 bool Channel::isInvited(Client& client) const
