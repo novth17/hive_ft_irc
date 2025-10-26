@@ -21,6 +21,14 @@ Client::Client(Server& server, int socket, std::string_view host)
 }
 
 /**
+ * Get the client's socket file descriptor.
+ */
+int Client::getSocket() const
+{
+	return socket;
+}
+
+/**
  * Send a string of text to the client. All the other variants of the
  * Client::send method call this one to do their business.
  */

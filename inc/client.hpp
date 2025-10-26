@@ -15,8 +15,10 @@ public:
 	Client(Server& server, int fd, std::string_view host);
 	~Client() = default;
 
+private:
 	Server& server;					// Reference to the server object
 	int socket = -1;				// The socket used for the client's connection
+public:
 	std::string nick;				// The client's nickname
 	std::string user;				// The client's user name
 	std::string realname;			// The client's real name
@@ -29,6 +31,8 @@ public:
 	bool isPassValid = false;		// Whether the client gave the correct password
 	bool isDisconnected = false;	// Set to true when the client is disconnected
 	std::set<Channel*>	channels;	// All channels the client is joined to
+
+	int getSocket() const;
 
 	void setChannelMode(Channel& channel, char* modes, char* args);
 

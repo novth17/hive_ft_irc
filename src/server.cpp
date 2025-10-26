@@ -145,7 +145,7 @@ void Server::receiveFromClient(Client& client)
 	char buffer[512];
 	ssize_t bytes = 1;
 	while (bytes > 0) {
-		bytes = recv(client.socket, buffer, sizeof(buffer), MSG_DONTWAIT);
+		bytes = recv(client.getSocket(), buffer, sizeof(buffer), MSG_DONTWAIT);
 
 		// Handle errors.
 		if (bytes == -1) {
@@ -306,7 +306,7 @@ void Server::disconnectClient(Client& client, std::string_view reason)
 	client.channels.clear();
 
 	// Unsubscribe from epoll events for the client connection.
-	epoll_ctl(epollFd, EPOLL_CTL_DEL, client.socket, nullptr);
+	epoll_ctl(epollFd, EPOLL_CTL_DEL, client.getSocket(), nullptr);
 
 	// Mark the client as disconnected. The connection is actually closed before
 	// the next iteration of the event loop.
