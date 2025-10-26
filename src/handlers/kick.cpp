@@ -10,32 +10,29 @@
  */
 void Client::handleKick(int argc, char** argv)
 {
-    // Must have at least <channel> and <user>
-    if (argc < 2) {
-        sendLine("461 ", nick, " KICK :Not enough parameters");
-		return log::warn(nick, " KICK: Need more params or too many params");
-    }
+	// Must have at least <channel> and <user>
+	if (argc < 2)
+		return sendNumeric("461", "KICK :Not enough parameters");
 
-    std::string channelName = argv[0];
-    std::string targetToKick = argv[1];
-
-    // find channel
-    Channel* channel = server->findChannelByName(channelName);
-    if (!channel) {
-        sendLine("403 ", nick, " ", channelName, " :No such channel");
-        log::warn("KICK: No such channel: ", channelName);
-        return;
-    }
+	// Find the target channel.
+	char* channelName = argv[0];
+	Channel* channel = server->findChannelByName(channelName);
+	if (channel == nullptr) {
+		log::warn("KICK: No such channel: ", channelName);
+		return sendNumeric("403", channelName, " :No such channel");
+	}
 
 	// Check that the sender is in the channel.
 	if (!channel->isMember(*this)) {
 		log::warn("KICK: ", nick, " tried to kick but is not a member of ", channelName);
-		return sendLine("442 ", nick, " ", channelName, " :You're not on that channel");
+		return sendNumeric("442", channelName, " :You're not on that channel");
 	}
 
 	// Check that the sender has operator privileges on the channel.
-	if (!channel->isOperator(*this))
-		return sendLine("482 ", nick, " ", channelName, " :You're not channel operator");
+	if (!channel->isOperator(*this)) {
+		log::warn("KICK: ", nick, " tried to kick but is not an operator of ", channelName);
+		return sendNumeric("482", channelName, " :You're not channel operator");
+	}
 
 	// Use an empty <reason> if none was given.
 	const char* reason = argc == 3 ? argv[2] : "";
@@ -49,7 +46,7 @@ void Client::handleKick(int argc, char** argv)
 		Client* target = channel->findClientByName(targetName);
 		if (target == nullptr) {
 			log::warn("KICK: ", nick, " tried to kick ", targetName, " but they are not in ", channelName);
-			return sendLine("441 ", nick, " ", targetName, " ", channelName, " :They aren't on that channel");
+			return sendNumeric("441", targetName, " ", channelName, " :They aren't on that channel");
 		}
 
 		// Broadcast kick message.

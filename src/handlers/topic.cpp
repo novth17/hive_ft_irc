@@ -10,45 +10,50 @@
  */
 void Client::handleTopic(int argc, char** argv)
 {
+	// Check that the correct number of parameters were given.
 	if (argc < 1 || argc > 2) {
-		sendLine("461 ", nick, " TOPIC :Not enough parameters");
-		return log::warn(nick, "TOPIC: Has to be 1-2 params: <channel> [<topic>]");
-	}
-	Channel* channel = server->findChannelByName(argv[0]);
-	if (!channel) {
-		sendLine("403 ", argv[0], " :No such channel");
-		return log::warn(nick, "TOPIC: There was no such channel");
-	}
-	if (argc == 1)
-	{
-		log::info("Sent topic: ", channel->topic);
-		if (!channel->findClientByName(nick)) {
-			sendLine("442 ", channel->name, " :You're not on that channel");
-			return log::warn(nick, "TOPIC: You're not on that channel");
-		}
-		if (channel->topic.empty()) {
-			sendLine("331 ", channel->name, " :No topic is set");
-			return log::warn(nick, "TOPIC: Channel's top ic is empty");
-		}
-		sendLine("332 ", nick, " ", channel->name, " :", channel->topic);
-		sendLine("333 ", nick, " ", channel->name, " ", channel->topicChangeStr);
-		return;
+		log::warn(nick, " TOPIC: Has to be 1-2 params: <channel> [<topic>]");
+		return sendNumeric("461", "TOPIC :Not enough parameters");
 	}
 
-	assert(argc == 2);
+	// Check that the channel exists.
+	char* channelName = argv[0];
+	Channel* channel = server->findChannelByName(channelName);
+	if (channel == nullptr) {
+		log::warn(nick, " TOPIC: There was no such channel");
+		return sendNumeric("403", channelName, " :No such channel");
+	}
 
+	// Check that the client is a member of the channel.
 	if (!channel->isMember(*this)) {
-		sendLine("442 ", channel->name, " :You're not on that channel");
-		return log::warn(nick, "TOPIC: You're not on that channel");
+		log::warn(nick, " TOPIC: You're not on that channel");
+		return sendNumeric("442", channel->name, " :You're not on that channel");
 	}
+
+	// Query the current topic.
+	if (argc == 1) {
+
+		// Check if the topic is not set.
+		if (channel->topic.empty()) {
+			log::warn(nick, " TOPIC: Channel's topic is empty");
+			return sendNumeric("331", channel->name, " :No topic is set");
+		}
+
+		// Reply with the current topic.
+		sendNumeric("332", channel->name, " :", channel->topic);
+		sendNumeric("333", channel->name, " :", channel->topicChangeStr);
+		return log::info("Sent topic: ", channel->topic);
+	}
+
 	// Check that the client has permissions to change the topic.
 	if (channel->restrictTopic && !channel->isOperator(*this)) {
-		sendLine("482 ", nick, " ", channel->name, " :You're not channel operator"); // Grammar mistake according to spec :)
-        return log::warn("TOPIC: ", nick, " tried to change topic but is not a operator of ", channel->name);
+        log::warn("TOPIC: ", nick, " tried to change topic but is not a operator of ", channel->name);
+		return sendNumeric("482", channel->name, " :You're not channel operator");
 	}
+
 	// Change the topic.
 	channel->topic = argv[1];
-	channel->topicChangeStr = std::string(nick).append(" ").append(Server::getTimeString());
+	channel->topicChangeStr = nick + " " + Server::getTimeString();
 	log::info("Changed topic of ", channel->name, " to: ", channel->topic);
 
 	// Notify all channel members (including the sender) of the change.

@@ -13,13 +13,13 @@ bool Client::handlePrivMsgParams(int argc, char** argv) {
 	(void) argv;
 
 	if (argc < 1) {
-		sendLine("411 " , nick, " :No recipient given");
+		sendNumeric("411", ":No recipient given");
 		log::warn("PRIVMSG: ", "No recipient parameter. NICK: ", nick);
 		return false;
 	}
 
-	if (argc < 2 || !argv[1] || !*argv[1]) {
-		sendLine("412 " , nick, " :No text to send");
+	if (argc < 2) {
+		sendNumeric("412", ":No text to send");
 		log::warn("PRIVMSG: ", "No recipient parameter. NICK: ", nick);
 		return false;
 	}
@@ -42,15 +42,15 @@ void Client::handlePrivMsg(int argc, char** argv)
 			// Check that the channel exists.
 			Channel* channel = server->findChannelByName(target);
 			if (channel == nullptr) {
-				sendLine("404 ", nick, " ", target, " :Cannot send to channel");
 				log::warn("PRIVMSG: No such channel: ", target);
+				sendNumeric("404", target, " :Cannot send to channel");
 				continue;
 			}
 
 			// Check that the sender is a member of the channel.
 			if (!channel->findClientByName(nick)) {
-				sendLine("404 ", nick, " ", target, " :Cannot send to channel (not a member)");
 				log::warn("PRIVMSG: Client ", nick, " is not a member of channel ", target);
+				sendNumeric("404", target, " :Cannot send to channel (not a member)");
 				continue;
 			}
 
@@ -74,8 +74,8 @@ void Client::handlePrivMsg(int argc, char** argv)
 			}
 			Client* client = server->findClientByName(target);
 			if (client == nullptr) {
-				sendLine("401 ", nick, " ", target, " :No such nick/channel");
 				log::warn("PRIVMSG: No such nick: ", target);
+				sendNumeric("401", target, " :No such nick/channel");
 				continue;
 			}
 

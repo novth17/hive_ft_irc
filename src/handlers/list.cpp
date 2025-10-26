@@ -10,18 +10,18 @@ void Client::handleList(int argc, char** argv)
 {
 	// Check that enough parameters were given.
 	if (argc > 1)
-		return sendLine("461 ", nick, " LIST :Not enough parameters");
+		return sendNumeric("461", "LIST :Not enough parameters");
 
 	// The list start reply is always sent.
-	sendLine("321 ", nick, " Channel :Users  Name");
+	sendNumeric("321", "Channel :Users  Name");
 
 	// If no parameters were given, list all channels.
 	if (argc == 0) {
 		for (auto& [_, channel]: server->allChannels()) {
-			send("322 ", nick, " ", channel.name, " ");
-			sendLine(channel.getMemberCount(), " :", channel.topic);
+			send(":", server->getHostname(), " 322 ", nick, " ", channel.name);
+			sendLine(" ", channel.getMemberCount(), " :", channel.topic);
 		}
-	
+
 	// Otherwise, list just the info for the listed channels.
 	} else if (argc == 1) {
 		char* channelList = argv[0];
@@ -29,12 +29,13 @@ void Client::handleList(int argc, char** argv)
 			char* channelName = nextListItem(channelList);
 			Channel* channel = server->findChannelByName(channelName);
 			if (channel != nullptr) {
-				send("322 ", nick, " ", channel->name, " ");
+				send(":", server->getHostname(), " 322 ");
+				send(fullname, " ", channel->name, " ");
 				sendLine(channel->getMemberCount(), " :", channel->topic);
 			}
 		}
 	}
 
 	// The list end reply is always sent.
-	sendLine("323 ", nick, " :End of /LIST");
+	sendNumeric("323", ":End of /LIST");
 }

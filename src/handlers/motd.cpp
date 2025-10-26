@@ -24,20 +24,20 @@ void Client::handleMotd(int argc, char** argv)
 	// Check parameters.
 	if (argc > 1) {
 		log::warn(nick, "MOTD: Has to be 0 or 1 params");
-		return sendLine("461 ", nick, " MOTD :Not enough parameters");
+		return sendNumeric("461", "MOTD :Not enough parameters");
 	}
 
 	// Server networks are not supported, so a <server> argument is always an
 	// error.
 	if (argc == 1)
-		return sendLine("402 ", fullname, " ", argv[0], " :No such server");
+		return sendNumeric("402", argv[0], " :No such server");
 
 	// Send the message of the day one line at a time.
-	sendLine("375 ", fullname, " :- " SERVER_NAME " Message of the day - ");
+	sendNumeric("375", ":- " SERVER_NAME " Message of the day - ");
 	for (const char* line = message; *line != '\0';) {
 		size_t length = std::strcspn(line, "\n");
-		sendLine("372 ", fullname, " :", std::string_view(line, length));
+		sendNumeric("372", ":", std::string_view(line, length));
 		line += length + (line[length] == '\n');
 	}
-	sendLine("376 ", fullname, " :End of /MOTD command.");
+	sendNumeric("376", ":End of /MOTD command.");
 }

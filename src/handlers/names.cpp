@@ -10,7 +10,7 @@ void Client::handleNames(int argc, char** argv)
 {
 	// Check that enough parameters were given.
 	if (argc != 1)
-		return sendLine("461 ", nick, " NAMES :Not enough parameters");
+		return sendNumeric("461", "NAMES :Not enough parameters");
 
 	// Traverse the comma-separated list of channels.
 	char* channelList = argv[0];
@@ -22,7 +22,7 @@ void Client::handleNames(int argc, char** argv)
 		if (channel != nullptr) {
 
 			// List the channel's members.
-			send("353 ", nick, " = ", channelName, " :");
+			send(":", server->getHostname(), " 353 ", fullname, " = ", channelName, " :");
 			for (Client* member: channel->members) {
 				const char* prefix = channel->isOperator(*member) ? "@" : "";
 				send(prefix, member->nick, " ");
@@ -31,6 +31,6 @@ void Client::handleNames(int argc, char** argv)
 		}
 
 		// Send an end-of-names numeric either way.
-		sendLine("366 ", nick, " ", channelName, " :End of /NAMES list");
+		sendNumeric("366", channelName, " :End of /NAMES list");
 	}
 }

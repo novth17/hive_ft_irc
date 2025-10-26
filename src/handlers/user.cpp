@@ -11,28 +11,30 @@
  */
 void Client::handleUser(int argc, char** argv)
 {
-	if (!isPassValid) { // Must have passed the correct password first: https://datatracker.ietf.org/doc/html/rfc2812#section-3.1.1
-		sendLine("464 :Password incorrect");
-		return log::warn(user, "USER: Password is not yet set");
+ 	// Must have passed the correct password first: https://datatracker.ietf.org/doc/html/rfc2812#section-3.1.1
+	if (!isPassValid) {
+		log::warn(user, " USER: Password is not yet set");
+		return sendNumeric("464", ":Password incorrect");
 	}
 
+	// Don't allow the user to reregister.
 	if (isRegistered) {
-		sendLine("462 :You may not reregister");
-		return log::warn(nick, "USER: Already registered user tried USER again");
+		log::warn(nick, " USER: Already registered user tried USER again");
+		return sendNumeric("462", ":You may not reregister");
 	}
 
 	if (argc < 4 || argv[0] == NULL || argv[3] == NULL) {
-		sendLine("461 USER :Not enough parameters");
-		return log::warn(user, "USER: Not enough parameters input: <username> <0> <*> <realname>");
+		log::warn(user, " USER: Not enough parameters");
+		return sendNumeric("461", "USER :Not enough parameters");
 	}
-	bool userAlreadySubmitted = (!user.empty() || !realname.empty()); // FIXME: Is it possible for us to receive them empty?
+	bool userAlreadySubmitted = !user.empty() || !realname.empty();
 
 	// Save username and real name
 	user = argv[0];
 	realname = argv[3];
+	fullname = nick + "!" + user + "@" + host;
 
 	log::info(nick, " registered USER as ", user, " (realname: ", realname, ")");
-
 	if (!userAlreadySubmitted)
 		handleRegistrationComplete();
 }

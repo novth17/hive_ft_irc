@@ -13,14 +13,14 @@ void Client::handleJoin(int argc, char** argv)
 {
 	// Check that enough parameters were provided.
 	if (argc < 1 || argc > 2) {
-		sendLine("461 ", nick, " JOIN :Not enough parameters");
-		return log::warn(nick, " JOIN: Need more params or too many params: <channel> <key>");
+		log::warn(nick, " JOIN: Need more params or too many params: <channel> <key>");
+		return sendNumeric("461", "JOIN :Not enough parameters");
 	}
 
 	// Check that the client is registered.
 	if (!isRegistered) {
-		sendLine("451 ", nick, " :You have not registered");
-		return log::warn(nick, " JOIN: User is not registered yet");
+		log::warn(nick, " JOIN: User is not registered yet");
+		return sendNumeric("451", ":You have not registered");
 	}
 
 	// If there's a single parameter "0" (without a '#' prefix), then PART all
@@ -38,7 +38,7 @@ void Client::handleJoin(int argc, char** argv)
 		return channels.clear();
 	}
 
-	// Join a list of channels.
+	// Join a comma-separated list of channels.
 	char noKeys[] = ""; // Empty list used if no keys were given.
 	char* names = argv[0]; // List of channel names ("#abc,#def")
 	char* keys = argc == 2 ? argv[1] : noKeys; // List of keys ("key1,key2")
@@ -50,8 +50,8 @@ void Client::handleJoin(int argc, char** argv)
 
 		// Check that a valid channel name was given.
 		if (!Channel::isValidName(name)) {
-			sendLine("403 ", nick, " ", name, " :No such channel");
-			log::warn(nick, " JOIN: Invalid channel name");
+			log::warn(nick, " JOIN: Invalid channel name: ", name);
+			sendNumeric("403", name, " :No such channel");
 			continue;
 		}
 
@@ -66,23 +66,23 @@ void Client::handleJoin(int argc, char** argv)
 
 		// Issue an error message if the key doesn't match.
 		if (channel->key != key) {
-			sendLine("475 ", nick, " ", name, " :Cannot join channel (+k)");
 			log::warn(nick, " JOIN: Cannot join channel, channel's key not match");
+			sendNumeric("475", name, " :Cannot join channel (+k)");
 			continue;
 		}
 
 		// Issue an error if the channel member limit has been reached.
 		if (channel->isFull()) {
-			sendLine("471 ", nick, " ", name, " :Cannot join channel (+l)");
 			log::warn(nick, " JOIN: Cannot join channel, channel member limit has been reached");
+			sendNumeric("471", name, " :Cannot join channel (+l)");
 			continue;
 		}
 
 		// Issue an error if the channel is invite-only, and the client hasn't
 		// been invited.
 		if (channel->inviteOnly && !channel->isInvited(*this)) {
-			sendLine("473 ", nick, " ", name, " :Cannot join channel (+i)");
 			log::warn(nick, " JOIN: Cannot join channel, channel is invite-only");
+			sendNumeric("473", name, " :Cannot join channel (+i)");
 			continue;
 		}
 
@@ -96,19 +96,20 @@ void Client::handleJoin(int argc, char** argv)
 
 		// Send the topic (with timestamp) if there is one.
 		if (!channel->topic.empty()) {
-			sendLine("332 ", nick, " ", name, " :", channel->topic);
-			sendLine("333 ", nick, " ", channel->name, " ", channel->topicChangeStr);
+			sendNumeric("332", name, " :", channel->topic);
+			sendNumeric("333", channel->name, " ", channel->topicChangeStr);
 			log::info(nick, " JOIN: Sent the topic");
 		}
 
 		// Send a list of members in the channel.
-		send("353 ", nick, " ", channel->symbol, " ", name, " :");
+		send(":", server->getHostname(), " 353 ", fullname, " ");
+		send(channel->symbol, " ", name, " :");
 		for (Client* member: channel->members) {
 			const char* prefix = channel->isOperator(*member) ? "@" : "";
 			send(prefix, member->nick, " ");
 		}
 		sendLine(); // Line break at the end of the member list.
-		sendLine("366 ", nick, " ", name, " :End of /NAMES list");
+		sendNumeric("366", name, " :End of /NAMES list");
 		log::info("Sent a list of members in the channel");
 
 		// Notify other members of the channel that someone joined.

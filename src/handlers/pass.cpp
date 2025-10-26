@@ -3,35 +3,31 @@
 #include "utility.hpp"
 #include "server.hpp"
 #include "irc.hpp"
-#include <cstring>
 
 /**
  * Handle a PASS message.
  */
 void Client::handlePass(int argc, char** argv)
 {
-	bool passAlreadyValid = isPassValid;
-
 	if (isRegistered) {
-		sendLine("462 ", nick.empty() ? "*" : nick, " :You may not reregister");
-		return log::warn(nick, "PASS: Already registered user");
+		log::warn(nick, " PASS: Already registered user");
+		return sendNumeric("462", ":You may not reregister");
 	}
 
-	if (argc != 1){
-		sendLine("461 ", nick.empty() ? "*" : nick, " PASS :Not enough parameters");
-		return log::warn(nick, "PASS: Has to be 1 param: <password>");
+	if (argc != 1) {
+		log::warn(nick, " PASS: Has to be 1 param: <password>");
+		return sendNumeric("461", "PASS :Not enough parameters");
 	}
 
-	if (server->correctPassword(argv[0]) == false)
-	{
+	if (!server->correctPassword(argv[0])) {
 		isPassValid = false;
-		sendLine("464 ", nick, " :Password incorrect");
-		log::warn(nick, "PASS: Password is incorrect");
+		sendNumeric("464", ":Password incorrect");
+		log::warn(nick, " PASS: Password is incorrect");
 		return server->disconnectClient(*this, "Incorrect password");
 	}
 
+	bool passAlreadyValid = isPassValid;
 	isPassValid = true;
-
 	if (!passAlreadyValid)
 		handleRegistrationComplete();
 }

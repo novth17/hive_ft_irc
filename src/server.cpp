@@ -1,9 +1,10 @@
 #include <arpa/inet.h>
 #include <csignal>
 #include <cstring>
+#include <fstream>
+#include <iomanip>
 #include <netdb.h>
 #include <sys/epoll.h>
-#include <iomanip>
 
 #include "channel.hpp"
 #include "client.hpp"
@@ -185,7 +186,8 @@ void Server::parseMessage(Client& client, std::string message)
 {
 	// Array for holding the individual parts of the message.
 	int argc = 0;
-	// log::info(">>> Message: '", message, "'");
+
+	// log::info(">>>>>>>>> RECV '", message, "'");
 	char* argv[MAX_MESSAGE_PARTS];
 
 	// Split the message into parts.
@@ -272,7 +274,7 @@ void Server::handleMessage(Client& client, int argc, char** argv)
 
 	// Log any unimplemented commands, so that they can be added eventually.
 	// For any other command, send an unknown command error.
-	client.sendLine("421 ", client.fullname, " ", argv[0], " :Unknown command");
+	client.sendNumeric("421", argv[0], " :Unknown command");
 	log::warn("Unimplemented command: ", argv[0]);
 }
 
@@ -379,4 +381,28 @@ size_t Server::getClientCount() const
 size_t Server::getChannelCount() const
 {
 	return channels.size();
+}
+
+/**
+ * Get the hostname for the server.
+ */
+std::string_view Server::getHostname()
+{
+	// If we haven't found out the hostname yet, read it from /etc/hostname, or
+	// use a default value.
+	if (hostname.empty()) {
+		hostname.assign("localhost");
+		auto openMode = std::ios::in | std::ios::ate;
+		std::ifstream file("/etc/hostname", openMode);
+		if (file.is_open()) {
+			std::string contents(file.tellg(), '\0');
+			file.seekg(0);
+			if (file.read(contents.data(), contents.size())) {
+				if (contents.ends_with('\n'))
+					contents.pop_back();
+				hostname = contents;
+			}
+		}
+	}
+	return hostname;
 }

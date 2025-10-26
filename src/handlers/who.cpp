@@ -12,9 +12,10 @@ void Client::handleWho(int argc, char** argv)
 {
 	// Check that the correct number of parameters were given.
 	if (argc > 2) {
-		sendLine("461 ", nick, " WHO :Not enough parameters");
-		return log::warn(nick, " WHO: Not enough parameters");
+		log::warn(nick, " WHO: Not enough parameters");
+		return sendNumeric("461", "WHO :Not enough parameters");
 	}
+
 	// If the server doesn't support the WHO command with a <mask> parameter, it
 	// can send just an empty list.
 	if (argc == 0) {
@@ -29,7 +30,7 @@ void Client::handleWho(int argc, char** argv)
 				channel = (*client.channels.begin())->name;
 
 			// Send some information about the client.
-			send("351 ", nick, " ");
+			send(":", server->getHostname(), " 351 ", nick, " ");
 			send(channel, " ");
 			send(client.user, " ");
 			send(client.host, " ");
@@ -40,5 +41,6 @@ void Client::handleWho(int argc, char** argv)
 			sendLine(realname);
 		}
 	}
-	return sendLine("315 ", nick, " ", argv[0], " :End of WHO list");
+	sendNumeric("315", argv[0], " :End of WHO list");
+	log::info(nick, " WHO: Sent some information about the client");
 }

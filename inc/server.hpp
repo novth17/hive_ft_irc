@@ -40,13 +40,12 @@ public:
 	size_t getChannelCount() const;
 	ClientIterators allClients() { return {clients.begin(), clients.end()}; }
 	ChannelIterators allChannels() { return {channels.begin(), channels.end()}; }
+	std::string_view getHostname();
 
 private:
 	void closeAndClean(const std::string& msg, int sockfd, struct addrinfo* result);
 	int  createListenSocket(const char* host, const char* port);
-
 	void receiveFromClient(Client& client);
-
 	void parseMessage(Client& client, std::string message);
 	void handleMessage(Client& client, int argc, char** argv);
 
@@ -55,6 +54,7 @@ private:
 	std::string launchTime;
 	std::string port;
 	std::string password;
+	std::string hostname;
 	std::map<int, Client> clients;
 	std::map<std::string, Channel> channels;
 };

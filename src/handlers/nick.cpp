@@ -23,27 +23,29 @@ void Client::handleNick(int argc, char** argv)
 {
 	// Must have passed the correct password first: https://datatracker.ietf.org/doc/html/rfc2812#section-3.1.1
 	if (!isPassValid) {
-		sendLine("464 :Password incorrect");
-		return log::warn(user, " Password is not yet set");
+		log::warn(user, "Password is not yet set");
+		return sendNumeric("464", ":Password incorrect");
 	}
+
 	// Check the parameter count.
 	if (argc < 1) {
-		sendLine("431 ", nick, " :No nickname given");
-		return log::warn(user, " NICK: No nick name given yet");
+		log::warn(user, " NICK: No nick name given yet");
+		return sendNumeric("431", ":No nickname given");
 	}
 	std::string_view newNick = argv[0];
 	if (argc > 2) {
-		sendLine("432 ", nick, " ", newNick, " :Erroneus nickname");
-		return log::warn(user, " NICK: Too many parameters given");
+		log::warn(user, " NICK: Too many parameters given");
+		return sendNumeric("432", newNick, " :Erroneus nickname");
 	}
+
 	// Check that the new nick is valid and not in use.
 	if (server->findClientByName(newNick)) {
-		sendLine("433 ", nick, " ", newNick, " :Nickname is already in use");
-		return log::warn(user, " NICK: Nickname is same as current one. Current Nickname: ", nick);
+		log::warn(user, " NICK: Nickname is already in use: ", newNick);
+		return sendNumeric("433", newNick, " :Nickname is already in use");
 	}
 	if (!isValidName(newNick)) {
-		sendLine("432 ", nick, " ", newNick, " :Erroneus nickname");
-		return log::warn(user, " NICK: Invalid format of nickname");
+		log::warn(user, "NICK: Invalid format of nickname");
+		return sendNumeric("432", newNick, " :Erroneus nickname");
 	}
 
 	// Send a notification of the name change to the client, and to other

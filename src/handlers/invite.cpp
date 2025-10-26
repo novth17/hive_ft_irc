@@ -11,8 +11,8 @@
 void Client::handleInvite(int argc, char** argv)
 {
 	if (argc != 2) {
-		log::warn(nick, "INVITE: Has to be 2 params: <nickname> <channel>");
-		return sendLine("461 ", fullname, " INVITE :Not enough parameters");
+		log::warn(nick, " INVITE: Has to be 2 params: <nickname> <channel>");
+		return sendNumeric("461", "INVITE :Not enough parameters");
 	}
 
 	// Check that the invited client exists.
@@ -20,7 +20,7 @@ void Client::handleInvite(int argc, char** argv)
 	Client* invitedClient = server->findClientByName(invitedName);
 	if (invitedClient == nullptr) {
 		log::warn("INVITE: No such nickname: ", invitedName);
-		return sendLine("406 ", fullname, invitedName, " :There was no such nickname");
+		return sendNumeric("406", invitedName, " :There was no such nickname");
 	}
 
 	// Check that the target channel exists.
@@ -28,30 +28,30 @@ void Client::handleInvite(int argc, char** argv)
 	Channel* channel = server->findChannelByName(channelName);
 	if (channel == nullptr) {
 		log::warn("INVITE: No such channel: ", channelName);
-		return sendLine("403 ", fullname, invitedName, " :No such channel");
+		return sendNumeric("403", invitedName, " :No such channel");
 	}
 
 	// Check that the sender is actually a member of the channel.
 	if (!channel->isMember(*this)) {
 		log::warn("INVITE: ", nick, " is not on ", channelName);
-		return sendLine("442 ", fullname, " ", channelName, " :You're not on that channel");
+		return sendNumeric("442", channelName, " :You're not on that channel");
 	}
 
 	// Check that the invited client isn't a member of the channel.
 	if (channel->isMember(*invitedClient)) {
 		log::warn("INVITE: ", nick, " is already on ", channelName);
-		return sendLine("443 ", fullname, " ", invitedName, " ", channelName, " :is already on channel");
+		return sendNumeric("443", invitedName, " ", channelName, " :is already on channel");
 	}
 
 	// Check that the sender is an operator on the channel.
 	if (!channel->isOperator(*this)) {
         log::warn("INVITE: ", nick, " tried to invite but is not a operator of ", channelName);
-		return sendLine("482 ", fullname, " ", channelName, " :You're not channel operator");
+		return sendNumeric("482", channelName, " :You're not channel operator");
 	}
 
 	// Add the invited client to the invite list and notify them.
 	channel->addInvited(*invitedClient);
-	sendLine("341 ", fullname, " ", invitedName, " ", channelName);
+	sendNumeric("341", invitedName, " ", channelName);
 	invitedClient->sendLine(":", fullname, " INVITE ", invitedName, " ", channelName);
-	log::info(nick, " invited ", invitedName, " to the channel ", channelName);
+	log::info(nick, " invited ", invitedName, " to ", channelName);
 }

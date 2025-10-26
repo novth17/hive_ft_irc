@@ -21,6 +21,7 @@ void Client::send(const std::string_view& string)
 	const int sendFlags = MSG_DONTWAIT | MSG_NOSIGNAL;
 	while (bytes > 0 && output.find("\r\n") != output.npos) {
 		bytes = ::send(socket, output.data(), output.size(), sendFlags);
+		// log::info(">>>>>>>>> SEND '", std::string_view(output.data(), output.size() - 2), "'");
 		if (bytes == -1) {
 			if (errno == EAGAIN || errno == ECONNRESET || errno == EPIPE)
 				break;
@@ -45,13 +46,17 @@ void Client::handleRegistrationComplete()
 	fullname = nick + "!" + user + "@" + host;
 
 	// Send welcome messages.
-	sendLine("001 ", nick, " :Welcome to the ", SERVER_NAME, " Network ", fullname);
-	sendLine("002 ", nick, " :Your host is ", SERVER_NAME, ", running version 1.0");
-	sendLine("003 ", nick, " :This server was created ", server->getLaunchTime());
-	sendLine("004 ", nick, " ", SERVER_NAME, " Version 1.0");
+	sendNumeric("001", ":Welcome to the ", SERVER_NAME, " Network ", fullname);
+	sendNumeric("002", ":Your host is ", SERVER_NAME, ", running version 1.0");
+	sendNumeric("003", ":This server was created ", server->getLaunchTime());
+	sendNumeric("004", ":" SERVER_NAME " Version 1.0");
 
 	// Send feature advertisement messages (at least one is mandatory).
-	sendLine("005 ", nick, "CASEMAPPING=ascii :are supported by this server");
+	const char* features[] = {
+		"CASEMAPPING=ascii",
+	};
+	for (const char* feature: features)
+		sendNumeric("005", feature, " :are supported by this server");
 
 	// Respond as if the LUSERS and MOTD commands had been sent.
 	handleLusers(0, nullptr);
@@ -74,13 +79,13 @@ bool Client::commonChecks(const char* cmd, bool reg, int argc, int min, int max)
 {
 	// Check registration.
 	if (reg && !isRegistered) {
-		sendLine("451 ", nick, " :You have not registered");
+		sendNumeric("451", ":You have not registered");
 		return false;
 	}
 
 	// Check parameter count.
 	if (argc < min || argc > max) {
-		sendLine("461 ", nick, " ", cmd, " :Not enough parameters");
+		sendNumeric("461", cmd, " :Not enough parameters");
 		return false;
 	}
 	return true;

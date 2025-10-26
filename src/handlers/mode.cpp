@@ -21,14 +21,11 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 
 		// Expect either a '+' or a '-'.
 		sign = *mode++;
-		if (sign != '+' && sign != '-') {
-			sendLine("472 ", nick, " ", sign, " :is unknown mode char to me");
-			return log::warn("MODE: Can't regcognize mode character used by client");
-		}
-		if (!std::isalpha(*mode)) {
-			sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
-			return log::warn("MODE: Can't regcognize mode character used by client");
-		}
+		if (sign != '+' && sign != '-')
+			return sendNumeric("472", sign, " :is unknown mode char to me");
+		if (!std::isalpha(*mode))
+			return sendNumeric("472", *mode, " :is unknown mode char to me");
+
 		// Iterate over the characters in the mode string.
 		for (; std::isalpha(*mode); mode++) {
 			switch (*mode) {
@@ -52,11 +49,10 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 				case 'k': {
 					if (sign == '+') {
 						char* key = nextListItem(args);
-						if (key == channel.key)
+						if (*key != '\0' && key == channel.key)
 							continue;
 						if (!channel.setKey(key)) {
-							sendLine("525 ", nick, " ", channel.name, " :Key is not well-formed");
-							log::warn("MODE: Value of a key channel mode change (+k) was rejected");
+							sendNumeric("525", channel.name, " :Key is not well-formed");
 							continue;
 						}
 						argsOut += " " + std::string(key);
@@ -70,8 +66,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 					if (sign == '+') {
 						int limit;
 						if (!parseInt(nextListItem(args), limit) || limit <= 0) {
-							sendLine("696 ", nick, " ", channel.name, " l ", limit, " :Bad limit");
-							log::warn("MODE: There was a problem with mode parameter");
+							sendNumeric("696", channel.name, " l ", limit, " :Bad limit");
 							continue;
 						} else if (limit == channel.memberLimit) {
 							continue;
@@ -90,8 +85,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 					char* target = nextListItem(args);
 					Client* client = server->findClientByName(target);
 					if (client == nullptr) {
-						sendLine("401 ", nick, " ", target, " :No such nick/channel");
-						log::warn("MODE: No client can be found for this nickname");
+						sendNumeric("401", target, " :No such nick/channel");
 						continue;
 					}
 
@@ -107,7 +101,7 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 
 				// Anything else is unrecognized.
 				default: {
-					sendLine("502 ", nick, " :Unknown MODE flag");
+					 sendNumeric("502", ":Unknown MODE flag");
 				} continue;
 			}
 
@@ -132,34 +126,31 @@ void Client::setChannelMode(Channel& channel, char* mode, char* args)
 void Client::handleMode(int argc, char** argv)
 {
 	// Check that enough parameters were provided.
-	if (argc < 1 || argc > 3) {
-		sendLine("461 ", nick, " MODE :Not enough parameters");
-		return log::warn(nick, " MODE: Need more params or too many params");
-	}
+	if (argc < 1 || argc > 3)
+		return sendNumeric("461", "MODE :Not enough parameters");
+
 	// Check if the target is a channel.
 	char* target = argv[0];
 	if (Channel::isValidName(target)) {
 
 		// Check that the channel actually exists.
 		Channel* channel = server->findChannelByName(target);
-		if (channel == nullptr) {
-			sendLine("403 ", nick, " ", target, " :No such channel");
-       		return log::warn("MODE: No such channel: ", target);
-		}
+		if (channel == nullptr)
+			return sendNumeric("403", target, " :No such channel");
+
 		// If no mode string was given, reply with the channel's current modes.
-		if (argc < 2) {
-			sendLine("324 ", nick, " ", target, " :", channel->getModes());
-		}
+		if (argc < 2)
+			return sendNumeric("324", target, " :", channel->getModes());
+
 		// Special case to keep irssi happy: Handle 'b' by sending an empty ban
 		// list for the channel.
-		if (std::strcmp(argv[1], "b") == 0) {
-			sendLine("368 ", nick, " ", target, " :End of channel ban list");
-		}
+		if (std::strcmp(argv[1], "b") == 0)
+			return sendNumeric("368", target, " :End of channel ban list");
+
 		// Check that the client has channel operator privileges.
-		if (!channel->isOperator(*this)) {
-			sendLine("482 ", nick, " ", target, " :You're not channel operator");
-			return log::warn("MODE: You don't have channel operator privileges");
-		}
+		if (!channel->isOperator(*this))
+			return sendNumeric("482", target, " :You're not channel operator");
+
 		// Parse the mode string.
 		char noArguments[1] = "";
 		char* args = argc < 3 ? noArguments : argv[2];
@@ -170,31 +161,27 @@ void Client::handleMode(int argc, char** argv)
 
 		// Check that the client exists.
 		Client* client = server->findClientByName(target);
-		if (client == nullptr) {
-			sendLine("401 ", nick, " ", target, " :No such nick/channel");
-			return log::warn("MODE: No client can be found for this nickname");
-		}
+		if (client == nullptr)
+			return sendNumeric("401", target, " :No such nick/channel");
+
 		// Check that the target matches the client's own nickname.
-		if (client->nick != target) {
-			sendLine("502 ", nick, " :Cant change mode for other users");
-			return log::warn("MODE: Users don't match. Can't view/change modes for other users");
-		}
+		if (client->nick != target)
+			return sendNumeric("502", ":Cant change mode for other users");
+
 		// If no mode string was given, reply with the client's current modes.
-		if (argc < 2) {
-			sendLine("221 ", nick, " :"); // No user modes implemented.
-			return log::warn("MODE: No user modes implemented");
-		}
+		if (argc < 2)
+			return sendNumeric("221", ":"); // No user modes implemented.
+
 		// User modes are not implemented, but we ignore the +i mode just to
 		// keep irssi happy.
 		char* mode = argv[1];
 		while (*mode) {
 			mode += *mode == '+' || *mode == '-';
-			if (!std::isalpha(*mode)) {
-				sendLine("472 ", nick, " ", *mode, " :is unknown mode char to me");
-			}
+			if (!std::isalpha(*mode))
+				return sendNumeric("472", *mode, " :is unknown mode char to me");
 			for (; std::isalpha(*mode); mode++) {
 				if (*mode != 'i')
-					sendLine("501 ", nick, " :Unknown MODE flag");
+					sendNumeric("502", ":Unknown MODE flag");
 			}
 		}
 	}

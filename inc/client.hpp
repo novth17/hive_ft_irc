@@ -5,8 +5,9 @@
 #include <string>
 #include <string_view>
 
+#include "server.hpp"
+
 class Channel;
-class Server;
 
 class Client
 {
@@ -46,6 +47,14 @@ public:
 	void handleList(int argc, char** argv);
 	void handleLusers(int argc, char** argv);
 	void handleMotd(int argc, char** argv);
+
+	// Send a numeric reply.
+	template <typename... Arguments>
+	void sendNumeric(const char* num, const Arguments&... args)
+	{
+		const char* name = nick.empty() ? "*" : nick.c_str();
+		sendLine(":", server->getHostname(), " ", num, " ", name, " ", args...);
+	}
 
 	// Send a string to the client.
 	void send(const std::string_view& string);
