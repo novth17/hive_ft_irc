@@ -5,34 +5,29 @@
 #include "irc.hpp"
 #include <cstring>
 
-/**
- * Handle PrivMsgParams.
- */
-bool Client::handlePrivMsgParams(int argc, char** argv) {
-
-	(void) argv;
-
-	if (argc < 1) {
-		sendNumeric("411", ":No recipient given");
-		log::warn("PRIVMSG: ", "No recipient parameter. NICK: ", nick);
-		return false;
-	}
-
-	if (argc < 2) {
-		sendNumeric("412", ":No text to send");
-		log::warn("PRIVMSG: ", "No recipient parameter. NICK: ", nick);
-		return false;
-	}
-	return true;
-}
-
 void Client::handlePrivMsg(int argc, char** argv)
 {
-	if (handlePrivMsgParams(argc, argv) == false)
-		return;
+	// Check that there is a recipient.
+	if (argc < 1) {
+		log::warn("PRIVMSG: ", "No recipient parameter. NICK: ", nick);
+		return sendNumeric("411", ":No recipient given");
+	}
+
+	// Check that there is a message.
+	if (argc < 2) {
+		log::warn("PRIVMSG: ", "No recipient parameter. NICK: ", nick);
+		return sendNumeric("412", ":No text to send");
+	}
+
+	// Check that the client is registered.
+	if (!isRegistered) {
+		log::warn(nick, " PRIVMSG: User is not registered yet");
+		return sendNumeric("451", ":You have not registered");
+	}
 
 	// Iterate over the list of message targets.
 	char* targetList = argv[0];
+	char* message = argv[1];
 	while (*targetList != '\0') {
 
 		// Check if the target is a channel.
@@ -54,24 +49,15 @@ void Client::handlePrivMsg(int argc, char** argv)
 				continue;
 			}
 
-			// Broadcast the message to all channel members. can make this a  method
-			for (Client* member: channel->members) {
-				if (member != this) {
-					member->send(":", fullname, " PRIVMSG ", target, " :");
-					for (int i = 1; i < argc; i++)
-						member->send(i == 1 ? "" : " ", argv[i]);
-					member->sendLine();
-				}
-			}
+			// Broadcast the message to all channel members.
+			for (Client* member: channel->members)
+				if (member != this)
+					member->sendLine(":", fullname, " PRIVMSG ", target, " :", message);
 
 		// Otherwise, the target is another client.
 		} else {
-			// Check that the client is registered.
-			if (!isRegistered) {
-				sendLine("451 ", nick, " :You have not registered");
-				log::warn(nick, " PRIVMSG: User is not registered yet");
-				continue;
-			}
+
+			// Check that the recipient exists.
 			Client* client = server->findClientByName(target);
 			if (client == nullptr) {
 				log::warn("PRIVMSG: No such nick: ", target);
@@ -79,11 +65,8 @@ void Client::handlePrivMsg(int argc, char** argv)
 				continue;
 			}
 
-			// Send all parts of the message.
-			client->send(":", fullname, " PRIVMSG ", target, " :");
-			for (int i = 1; i < argc; i++)
-				client->send(i == 1 ? "" : " ", argv[i]);
-			client->sendLine();
+			// Send the message.
+			client->sendLine(":", fullname, " PRIVMSG ", target, " :", message);
 		}
 	}
 }

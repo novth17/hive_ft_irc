@@ -38,7 +38,6 @@ public:
 	void handleQuit(int argc, char** argv);
 	void handleMode(int argc, char** argv);
 	void handleWho(int argc, char** argv);
-	bool handlePrivMsgParams(int argc, char** argv);
 	void handlePrivMsg(int argc, char** argv);
 	void handleKick(int argc, char** argv);
 	void handleTopic(int argc, char** argv);
