@@ -54,9 +54,9 @@ void Client::handleTopic(int argc, char** argv)
 	// Change the topic.
 	channel->topic = argv[1];
 	channel->topicChangeStr = nick + " " + Server::getTimeString();
-	log::info("Changed topic of ", channel->name, " to: ", channel->topic);
+	log::info(nick, " changed topic of ", channel->name, " to: ", channel->topic);
 
 	// Notify all channel members (including the sender) of the change.
 	for (Client* member: channel->members)
-		member->sendLine("TOPIC ", channel->name, " :", channel->topic);
+		member->sendLine(":", nick, " TOPIC ", channel->name, " :", channel->topic);
 }
