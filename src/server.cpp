@@ -298,12 +298,12 @@ void Server::disconnectClient(Client& client, std::string_view reason)
 	// Send QUIT messages to let other clients know the client disconnected.
 	// The <source> of the message is the disconnected client. Also remove the
 	// client from all channels it's a part of.
-	for (Channel* channel: client.channels) {
+	for (Channel* channel: client.allChannels()) {
 		for (Client* member: channel->allMembers())
 			member->sendLine(":", client.fullname, " QUIT :", reason);
 		channel->removeMember(client);
 	}
-	client.channels.clear();
+	client.clearChannels();
 
 	// Unsubscribe from epoll events for the client connection.
 	epoll_ctl(epollFd, EPOLL_CTL_DEL, client.getSocket(), nullptr);

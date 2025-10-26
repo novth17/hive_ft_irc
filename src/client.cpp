@@ -29,6 +29,22 @@ int Client::getSocket() const
 }
 
 /**
+ * Get an iterator pair over the channels the client is joined to.
+ */
+ClientChannelIterators Client::allChannels()
+{
+	return {channels.begin(), channels.end()};
+}
+
+/**
+ * Clear the client's list of channels.
+ */
+void Client::clearChannels()
+{
+	channels.clear();
+}
+
+/**
  * Send a string of text to the client. All the other variants of the
  * Client::send method call this one to do their business.
  */
