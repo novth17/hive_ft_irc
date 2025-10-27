@@ -31,7 +31,7 @@ public:
 	Client* findClientByName(std::string_view name);
 	Channel* newChannel(const std::string& name);
 	Client& newClient(int fd, std::string_view host);
-	void eventLoop(const char* host, const char* port);
+	void eventLoop(const char* port);
 	bool correctPassword(std::string_view pass);
 	bool clientsOnSameChannel(const Client& a, const Client& b);
 	void disconnectClient(Client& client, std::string_view reason = "");
@@ -44,8 +44,7 @@ public:
 	std::string_view getHostname();
 
 private:
-	void closeAndClean(const std::string& msg, int sockfd, struct addrinfo* result);
-	int  createListenSocket(const char* host, const char* port);
+	int createListenSocket(const char* port);
 
 	int serverFd = -1;
 	int epollFd = -1;

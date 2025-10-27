@@ -19,6 +19,8 @@ class Channel
 {
 public:
 	explicit Channel(std::string_view name);
+	Channel(const Channel&) = default;
+	Channel& operator=(const Channel&) = default;
 	~Channel() = default;
 
 	bool isMember(Client& client) const;
@@ -63,11 +65,14 @@ public:
 	bool isTopicRestricted() const;
 	void setTopicRestricted(bool enable);
 
+	int64_t getCreationTime() const;
+
 private:
 	std::string name;				// The name of the channel
 	std::string topic;				// The current topic
 	std::string topicChangeStr;		// The nick of the person who last changed topic plus a timestamp
 	std::string key;				// Key for the +k mode (empty = no key)
+	int64_t creationTime;			// Unix timestamp for the channel creation
 	std::set<Client*> members;		// All clients joined to this channel
 	std::set<Client*> operators;	// All clients with operator privileges
 	std::set<Client*> invited;		// All nicknames invited to this channel

@@ -1,3 +1,5 @@
+#include <ctime>
+
 #include "channel.hpp"
 #include "client.hpp"
 #include "irc.hpp"
@@ -7,7 +9,8 @@
  * Make a new channel.
  */
 Channel::Channel(std::string_view name)
-	: name(name)
+	: name(name),
+	  creationTime(time(nullptr))
 {
 }
 
@@ -20,16 +23,11 @@ bool Channel::isMember(Client& client) const
 }
 
 /**
- * Make a client a member of this channel. If it's the first member of the
- * channel, then it's also made the channel operator.
+ * Make a client a member of this channel.
  */
 void Channel::addMember(Client& client)
 {
 	members.insert(&client);
-	if (members.size() == 1) {
-		addOperator(client);
-		client.sendLine("MODE ", name, " +o ", client.getNick());
-	}
 }
 
 /**
@@ -310,4 +308,12 @@ bool Channel::isTopicRestricted() const
 void Channel::setTopicRestricted(bool enable)
 {
 	topicRestricted = enable;
+}
+
+/**
+ * Get the Unix timestamp for the channel creation time.
+ */
+int64_t Channel::getCreationTime() const
+{
+	return creationTime;
 }

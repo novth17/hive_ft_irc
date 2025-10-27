@@ -31,7 +31,52 @@ Server::~Server()
 	safeClose(epollFd);
 }
 
-void Server::eventLoop(const char* host, const char* port)
+/**
+ * Create a socket file descriptor for listening for incoming connections.
+ */
+int Server::createListenSocket(const char* port)
+{
+	struct addrinfo *ai = nullptr;
+
+	try {
+		// Get address info for the listening socket.
+		struct addrinfo hints = {};
+		hints.ai_family   = AF_INET;		// IPv4 only (not IPv6).
+		hints.ai_socktype = SOCK_STREAM;	// TCP only (not UDP).
+		hints.ai_flags = AI_PASSIVE;   		// Accept any connections.
+		int status = getaddrinfo(nullptr, port, &hints, &ai);
+		if (status != 0)
+			fail("getaddrinfo() failed: ", gai_strerror(status));
+
+		// Create the listening socket.
+		serverFd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+		if (serverFd == -1)
+			fail("socket() failed: ", strerror(errno));
+
+		// Allow reuse of the same port in successive runs of the server. Avoids
+		// the "address already in use" error when bind() is called.
+		int opt = 1;
+		if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+			fail("setsockopt() failed:", strerror(errno));
+
+		// Bind the socket.
+		if (bind(serverFd, ai->ai_addr, ai->ai_addrlen) == -1)
+			fail("bind failed: ", strerror(errno));
+
+		// Start listening for incoming connections.
+		if (listen(serverFd, MAX_BACKLOG) == -1)
+			fail("listen failed: ", strerror(errno));
+		freeaddrinfo(ai);
+	
+	// Free resources if any of the preceding syscalls failed.
+	} catch (...) {
+		freeaddrinfo(ai);
+		throw; // Rethrow the same exception.
+	}
+	return serverFd;
+}
+
+void Server::eventLoop(const char* port)
 {
 	// Install a signal handler for SIGINT, so that the server can be shut down
 	// gracefully with Ctrl + C.
@@ -44,7 +89,7 @@ void Server::eventLoop(const char* host, const char* port)
 	struct epoll_event epollEvent, events[MAX_EVENTS];
 
 	// Create listen socket.
-	serverFd = createListenSocket(host, port);
+	serverFd = createListenSocket(port);
 	if (serverFd == -1)
 		fail("Failed to create server socket: ", strerror(errno));
 

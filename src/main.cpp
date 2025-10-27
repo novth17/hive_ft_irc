@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 	// Start the server.
 	try {
 		Server server(argv[1], argv[2]);
-		server.eventLoop(NULL, argv[1]);
+		server.eventLoop(argv[1]);
 	} catch (std::exception& error) {
 		log::error("Unhandled exception: ", error.what());
 	}
