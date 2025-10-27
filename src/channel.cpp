@@ -1,5 +1,6 @@
 #include "channel.hpp"
 #include "client.hpp"
+#include "irc.hpp"
 #include "utility.hpp"
 
 /**
@@ -69,12 +70,13 @@ void Channel::removeOperator(Client& client)
 
 /**
  * Determine if a string contains a valid channel name. A channel must start
- * with either a '#' or '&' sign, and can't contain spaces, commas or the bell
+ * with either a '#', and can't contain spaces, commas or the bell
  * character (of all things).
  */
 bool Channel::isValidName(std::string_view name)
 {
-	if (name.empty() || (name[0] != '#' && name[0] != '&'))
+	if (name.empty() || name.length() > CHANNELLEN
+		|| name[0] != '#')
 		return false;
 	for (char chr: name)
 		if (chr == ' ' || chr == ',' || chr == '\a')

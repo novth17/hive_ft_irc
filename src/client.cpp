@@ -260,6 +260,11 @@ void Client::handleRegistrationComplete()
 	// Send feature advertisement messages (at least one is mandatory).
 	const char* features[] = {
 		"CASEMAPPING=ascii",
+		"NICKLEN=" STRINGIFY(NICKLEN),
+		"USERLEN=" STRINGIFY(USERLEN),
+		"TOPICLEN=" STRINGIFY(TOPICLEN),
+		"CHANNELLEN=" STRINGIFY(CHANNELLEN),
+		"KICKLEN=" STRINGIFY(KICKLEN),
 	};
 	for (const char* feature: features)
 		sendNumeric("005", feature, " :are supported by this server");

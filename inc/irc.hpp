@@ -15,6 +15,15 @@
 // Maximum number of events received by epoll at one time.
 #define MAX_EVENTS 10
 
+#define NICKLEN 31		// Maximum number of characters in a nickname.
+#define USERLEN 31		// Maximum number of characters in a username.
+#define CHANNELLEN 63	// Maximum number of characters in a channel name.
+#define TOPICLEN 255	// Maximum number of characters in a channel topic.
+#define KICKLEN 255		// Maximum number of characters in a kick reason.
+
+#define STRINGIFIER(x) #x
+#define STRINGIFY(x) STRINGIFIER(x)
+
 // IRC numeric reply codes.
 #define RPL_WELCOME             001
 #define RPL_YOURHOST            002
