@@ -91,6 +91,13 @@ void Client::handleJoin(int argc, char** argv)
 		sendLine(":", fullname, " JOIN ", name);
 		log::info(nick, " JOIN: a JOIN message was sent to the joining client");
 
+		// Make the client the operator if they're the first member.
+		if (channel->getMemberCount() == 1) {
+			log::info("Made ", nick, " the operator of ", channel->getName());
+			channel->addOperator(*this);
+			sendLine("MODE ", channel->getName(), " +o ", nick);
+		}
+
 		// Send the topic (with timestamp) if there is one.
 		if (channel->hasTopic()) {
 			sendNumeric("332", name, " :", channel->getTopic());
@@ -107,6 +114,10 @@ void Client::handleJoin(int argc, char** argv)
 		sendLine(); // Line break at the end of the member list.
 		sendNumeric("366", name, " :End of /NAMES list");
 		log::info("Sent a list of members in the channel");
+
+		// Send the channel creation time.
+		sendNumeric("329", channel->getName(), " :", channel->getCreationTime());
+		log::info("Sending date: ", channel->getCreationTime());
 
 		// Notify other members of the channel that someone joined.
 		for (Client* member: channel->allMembers())
