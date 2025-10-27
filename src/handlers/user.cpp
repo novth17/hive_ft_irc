@@ -31,6 +31,12 @@ void Client::handleUser(int argc, char** argv)
 	// Save username and real name
 	bool userAlreadySubmitted = !user.empty() || !realname.empty();
 	user = argv[0];
+	if (user.length() == 0) {
+		log::warn(nick, " USER: Attempted to register with empty user string");
+		return sendNumeric("461", "USER", " :Not enough parameters");
+	}
+	if (user.length() > USERLEN)
+		user.resize(USERLEN);
 	realname = argv[3];
 	fullname = nick + "!" + user + "@" + host;
 

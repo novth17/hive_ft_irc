@@ -3,7 +3,6 @@
 #include "utility.hpp"
 #include "server.hpp"
 #include "irc.hpp"
-#include <cstring>
 
 /**
  * Handle a TOPIC command.
@@ -49,8 +48,14 @@ void Client::handleTopic(int argc, char** argv)
 		return sendNumeric("482", channel->getName(), " :You're not channel operator");
 	}
 
+	std::string topicText = argv[1];
+
+	// Limit the topic's length based on the TOPICLEN setting.
+	if (topicText.length() > TOPICLEN)
+		topicText.resize(TOPICLEN);
+
 	// Change the topic.
-	channel->setTopic(argv[1], *this);
+	channel->setTopic(topicText, *this);
 
 	// Notify all channel members (including the sender) of the change.
 	for (Client* member: channel->allMembers())

@@ -34,7 +34,11 @@ void Client::handleKick(int argc, char** argv)
 	}
 
 	// Use an empty <reason> if none was given.
-	const char* reason = argc == 3 ? argv[2] : "";
+	std::string reason = argc == 3 ? argv[2] : "";
+
+	// Limit the <reason>'s length based on the KICKLEN setting.
+	if (reason.length() > KICKLEN)
+		reason.resize(KICKLEN);
 
 	// Process the list of target clients to kick.
 	char* targetList = argv[1];
