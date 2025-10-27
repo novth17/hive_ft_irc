@@ -28,7 +28,7 @@ void Client::handleNick(int argc, char** argv)
 
 	// Must have passed the correct password first: https://datatracker.ietf.org/doc/html/rfc2812#section-3.1.1
 	if (!isPassValid) {
-		log::warn(user, "Password is not yet set");
+		log::warn(user, " NICK: password is not yet set");
 		return sendNumeric("464", ":Password incorrect");
 	}
 
@@ -39,7 +39,7 @@ void Client::handleNick(int argc, char** argv)
 		return sendNumeric("433", newNick, " :Nickname is already in use");
 	}
 	if (!isValidName(newNick)) {
-		log::warn(user, "NICK: Invalid format of nickname");
+		log::warn(user, " NICK: Invalid format of nickname");
 		return sendNumeric("432", newNick, " :Erroneus nickname");
 	}
 

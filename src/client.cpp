@@ -124,7 +124,6 @@ void Client::parseMessage(std::string message)
 	// Array for holding the individual parts of the message.
 	int argc = 0;
 
-	// log::info(">>>>>>>>> RECV '", message, "'");
 	char* argv[MAX_MESSAGE_PARTS];
 
 	// Split the message into parts.
@@ -146,7 +145,7 @@ void Client::parseMessage(std::string message)
 
 			// Issue a warning if there are too many parts.
 			if (argc == MAX_MESSAGE_PARTS) {
-				log::warn("Message has too many parts:", message);
+				log::warn("Message has too many parts: ", message);
 				return;
 			}
 
@@ -227,7 +226,6 @@ void Client::send(const std::string_view& string)
 	const int sendFlags = MSG_DONTWAIT | MSG_NOSIGNAL;
 	while (bytes > 0 && output.find("\r\n") != output.npos) {
 		bytes = ::send(socket, output.data(), output.size(), sendFlags);
-		// log::info(">>>>>>>>> SEND '", std::string_view(output.data(), output.size() - 2), "'");
 		if (bytes == -1) {
 			if (errno == EAGAIN || errno == ECONNRESET || errno == EPIPE)
 				break;
