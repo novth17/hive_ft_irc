@@ -22,23 +22,6 @@ public:
 	Client(Server& server, int fd, std::string_view host);
 	~Client() = default;
 
-private:
-	Server& server;					// Reference to the server object
-	int socket = -1;				// The socket used for the client's connection
-	std::string output;				// Buffered data for send()
-	std::set<Channel*>	channels;	// All channels the client is joined to
-	std::string host;				// The client's host IP address
-	bool isRegistered = false;		// Whether the client completed registration
-	bool isPassValid = false;		// Whether the client gave the correct password
-	bool disconnected = false;		// Set to true when the client is disconnected
-	std::string user;				// The client's user name
-	std::string realname;			// The client's real name
-	std::string fullname;			// The full nick!user@host name
-	std::string nick;				// The client's nickname
-public:
-
-	std::string input;				// Buffered data from recv()
-
 	int getSocket() const;
 	ClientChannelIterators allChannels();
 	void setChannelMode(Channel& channel, char* modes, char* args);
@@ -48,6 +31,10 @@ public:
 	std::string_view getNick() const;
 	bool isDisconnected() const;
 	void setDisconnected();
+
+	void receive();
+	void parseMessage(std::string message);
+	void handleMessage(int argc, char** argv);
 
 	void handleUser(int argc, char** argv);
 	void handleNick(int argc, char** argv);
@@ -111,4 +98,19 @@ public:
 	static bool isValidName(std::string_view name);
 	void handleRegistrationComplete();
 	bool checkParams(const char* cmd, bool reg, int argc, int min, int max);
+
+private:
+	Server& server;					// Reference to the server object
+	int socket = -1;				// The socket used for the client's connection
+	bool isRegistered = false;		// Whether the client completed registration
+	bool isPassValid = false;		// Whether the client gave the correct password
+	bool disconnected = false;		// Set to true when the client is disconnected
+	std::set<Channel*>	channels;	// All channels the client is joined to
+	std::string host;				// The client's host IP address
+	std::string user;				// The client's user name
+	std::string realname;			// The client's real name
+	std::string fullname;			// The full nick!user@host name
+	std::string nick;				// The client's nickname
+	std::string input;				// Buffered data from recv()
+	std::string output;				// Buffered data for send()
 };

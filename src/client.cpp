@@ -1,14 +1,9 @@
-#include <cstring>
-#include <string_view>
 #include <sys/socket.h>
 #include <cstring>
 
 #include "client.hpp"
-#include "channel.hpp"
 #include "utility.hpp"
-#include "server.hpp"
 #include "irc.hpp"
-#include "log.hpp"
 
 /**
  * Create a new Client.
@@ -82,6 +77,143 @@ bool Client::isDisconnected() const
 void Client::setDisconnected()
 {
 	disconnected = true;
+}
+
+void Client::receive()
+{
+	// Receive data from the client.
+	char buffer[512];
+	ssize_t bytes = 1;
+	while (bytes > 0) {
+		bytes = recv(socket, buffer, sizeof(buffer), MSG_DONTWAIT);
+
+		// Handle errors.
+		if (bytes == -1) {
+			if (errno == EAGAIN || errno == ECONNRESET)
+				break; // Nothing more to read.
+			fail("Failed to receive from client: ", strerror(errno));
+
+		// Handle client disconnection.
+		} else if (bytes == 0) {
+			server.disconnectClient(*this);
+
+		// Buffer received data.
+		} else {
+			input.append(buffer, bytes);
+
+			// Check for complete messages.
+			while (true) {
+				size_t newline = input.find("\r\n");
+				if (newline == input.npos)
+					break;
+				auto begin = input.begin();
+				auto end = input.begin() + newline;
+				parseMessage(std::string(begin, end));
+				input.erase(0, newline + 2);
+			}
+		}
+	}
+}
+
+/**
+ * Parse a raw client message, then pass it to the message handler for the
+ * message's command, along with any parameters.
+ */
+void Client::parseMessage(std::string message)
+{
+	// Array for holding the individual parts of the message.
+	int argc = 0;
+
+	// log::info(">>>>>>>>> RECV '", message, "'");
+	char* argv[MAX_MESSAGE_PARTS];
+
+	// Split the message into parts.
+	size_t begin = 0;
+	while (begin < message.length()) {
+
+		// Find the beginning of the next part.
+		begin = message.find_first_not_of(' ', begin);
+		if (begin == message.npos)
+			break; // Reached the end of the message.
+
+		// Find the end of the part (either the next space or the message end).
+		size_t end = message.find(' ', begin);
+		if (end == message.npos)
+			end = message.length();
+
+		// Ignore tags (parts starting with an '@' sign).
+		if (message[begin] != '@') {
+
+			// Issue a warning if there are too many parts.
+			if (argc == MAX_MESSAGE_PARTS) {
+				log::warn("Message has too many parts:", message);
+				return;
+			}
+
+			// If the part starts with a ':', treat the rest of the message as
+			// one big part.
+			if (message[begin] == ':') {
+				end = message.length();
+				begin++; // Strip the ':' from the message.
+			}
+
+			// Add the part to the array and null-terminate it.
+			argv[argc++] = message.data() + begin;
+			message[end] = '\0';
+		}
+
+		// Begin the next part at the end of this one.
+		begin = end + (end < message.length());
+	}
+
+	// Pass the message to its handler.
+	handleMessage(argc, argv);
+}
+
+/**
+ * Handle any type of message. Removes the command from the parameter list, then
+ * calls the handler for that command with the remaining parameters.
+ */
+void Client::handleMessage(int argc, char** argv)
+{
+	// Ignore empty messages.
+	if (argc == 0)
+		return;
+
+	// Array of message handlers.
+	using Handler = void (Client::*)(int, char**);
+	static const std::pair<const char*, Handler> handlers[] = {
+		{"USER", &Client::handleUser},
+		{"NICK", &Client::handleNick},
+		{"PASS", &Client::handlePass},
+		{"PART", &Client::handlePart},
+		{"JOIN", &Client::handleJoin},
+		{"PING", &Client::handlePing},
+		{"QUIT", &Client::handleQuit},
+		{"MODE", &Client::handleMode},
+		{"WHO", &Client::handleWho},
+		{"KICK", &Client::handleKick},
+		{"PRIVMSG", &Client::handlePrivMsg},
+		{"TOPIC",  &Client::handleTopic},
+		{"INVITE", &Client::handleInvite},
+		{"NAMES", &Client::handleNames},
+		{"LIST", &Client::handleList},
+		{"LUSERS", &Client::handleLusers},
+		{"MOTD", &Client::handleMotd},
+		{"NOTICE", &Client::handleNotice},
+	};
+
+	// Send the message to the handler for that command.
+	for (const auto& [command, handler]: handlers) {
+		if (matchIgnoreCase(command, argv[0])) {
+			return (this->*handler)(argc - 1, argv + 1);
+		}
+	}
+
+	// Log any unimplemented commands, so that they can be added eventually.
+	// For any other command, send an unknown command error.
+	sendNumeric("421", argv[0], " :Unknown command");
+	log::warn("Unimplemented command: ", argv[0]);
 }
 
 /**

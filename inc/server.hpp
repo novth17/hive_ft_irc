@@ -46,9 +46,6 @@ public:
 private:
 	void closeAndClean(const std::string& msg, int sockfd, struct addrinfo* result);
 	int  createListenSocket(const char* host, const char* port);
-	void receiveFromClient(Client& client);
-	void parseMessage(Client& client, std::string message);
-	void handleMessage(Client& client, int argc, char** argv);
 
 	int serverFd = -1;
 	int epollFd = -1;
