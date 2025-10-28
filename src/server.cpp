@@ -115,7 +115,7 @@ void Server::eventLoop(const char* port)
 		int numberOfReadyEvents = epoll_wait(epollFd, events, MAX_EVENTS, -1);
 		if (numberOfReadyEvents == -1) {
 			if (errno == EINTR && caughtSignal == SIGINT) {
-				fprintf(stderr, "\r"); // Just to avoid printing ^C.
+				std::fprintf(stderr, "\r"); // Just to avoid printing ^C.
 				log::info("Interrupted by user");
 				break;
 			}
