@@ -11,7 +11,8 @@
 Client::Client(Server& server, int socket, std::string_view host)
 	: server(server),
 	  socket(socket),
-	  host(host)
+	  host(host),
+	  isPassValid(server.correctPassword(""))
 {
 }
 

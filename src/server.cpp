@@ -16,8 +16,11 @@
 Server::Server(const char* port, const char* password)
 	: port(port), password(password)
 {
+	if (*password == '\0')
+		log::info("Starting server with no password");
+	else
+		log::info("Starting server with password '", password, "'");
 	launchTime = getTimeString();
-	log::info("Starting server with password ", password);
 }
 
 Server::~Server()
@@ -185,11 +188,12 @@ void Server::eventLoop(const char* port)
 }
 
 /**
- * Check if a string matches the server password.
+ * Check if a string matches the server password. Also returns true if no
+ * password is required for the server.
  */
 bool Server::correctPassword(std::string_view pass)
 {
-	return password == pass;
+	return password.empty() || password == pass;
 }
 
 /**
