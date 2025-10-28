@@ -73,7 +73,8 @@ bool Channel::isValidName(std::string_view name)
 {
 	return !name.empty()
 		&& name.length() <= CHANNELLEN
-		&& isValidNameString(name);
+		&& name[0] == '#'
+		&& isValidNameString(&name[1]);
 }
 
 /**
