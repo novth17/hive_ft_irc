@@ -102,9 +102,6 @@ public:
 private:
 	Server& server;					// Reference to the server object
 	int socket = -1;				// The socket used for the client's connection
-	bool isRegistered = false;		// Whether the client completed registration
-	bool isPassValid = false;		// Whether the client gave the correct password
-	bool disconnected = false;		// Set to true when the client is disconnected
 	std::set<Channel*>	channels;	// All channels the client is joined to
 	std::string host;				// The client's host IP address
 	std::string user;				// The client's user name
@@ -113,4 +110,7 @@ private:
 	std::string nick;				// The client's nickname
 	std::string input;				// Buffered data from recv()
 	std::string output;				// Buffered data for send()
+	bool isRegistered = false;		// Whether the client completed registration
+	bool isPassValid = false;		// Whether the client gave the correct password
+	bool disconnected = false;		// Set to true when the client is disconnected
 };
