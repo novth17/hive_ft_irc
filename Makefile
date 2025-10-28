@@ -42,6 +42,9 @@ re: fclean all
 test: all
 	./$(NAME) 6667 secret
 
+bot: all
+	./$(NAME) 6667 secret prudebot
+
 leaks: all
 	valgrind --track-fds=yes ./$(NAME) 6667 secret
 
@@ -51,6 +54,6 @@ irssi:
 nc:
 	nc -C localhost 6667
 
-.PHONY: all clean fclean re test leaks irssi nc
+.PHONY: all clean fclean re test leaks irssi nc bot
 .SECONDARY: $(OBJ)
 -include $(DEP)
