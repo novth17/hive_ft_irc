@@ -10,7 +10,7 @@
 void Client::handleQuit(int argc, char** argv)
 {
 	// Check that enough parameters were provided.
-	if (!checkParams("QUIT", true, argc, 0, 1))
+	if (!checkParams("QUIT", false, argc, 0, 1))
 		return;
 
 	// Use a default message if none was provided.
