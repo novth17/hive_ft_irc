@@ -9,7 +9,7 @@ A client implementation is not part of the project — instead, we used real IRC
 https://github.com/user-attachments/assets/e2a23788-b88c-45b1-a42f-dbeac9704303
 
 ---
-## 🛠️ Features (Mandatory)
+## 🛠️ Features
 The server behaves like a Real™ IRC server, implementing the following core networking and protocol features:
 
 ### 🔧 Core Functionality
@@ -48,22 +48,36 @@ MODE — adjust channel modes:
     o	  Give/take operator privileges
     l	  Set/remove user limit
 ```
+
+### 🤖 ChatBot
+Feature: warning users who use "naughty" words.
+Connects to the server as a user, responds to channel invites, replies to specific messages.
+
 ----
 ## 📦 Build & Run
+
+Compile the program with make. Then launch the server with ./ircserv [NETWORK PORT] [PASSWORD] (empty password == no password)
 ```
 make
-./ircserv <port> <password>
 ```
-Example:
+
+Launch example:
 ```
 ./ircserv 6667 secret
 ```
-Then connect using an IRC client. For example:
+Then connect using an IRC client. Connect to the server with your IRC client of choice! Our reference client when making the server was irssi.
 ```
-server: 127.0.0.1
-port: 6667
-password: secret
+irssi
+/connect 127.0.0.1 6667 secret
 ```
+
+Meaning:
+- server: 127.0.0.1
+- port: 6667
+- password: secret
+
+Optionally, run prudebot with ./ircserv [NETWORK PORT] [PASSWORD] [BOT NICKNAME] at any point after launching the server.
+
 ## Credits
 
 - [Eve Keinan](https://github.com/EvAvKein)
