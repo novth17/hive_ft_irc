@@ -1,73 +1,69 @@
-# FT_IRC
+# Internet Relay Chat - ft_irc
 
-My 12th project at 42 Network's Hive Helsinki 🐝
+A standards-compliant IRC (Internet Relay Chat) server, implemented in C++.
 
-A standards-compliant IRC (Internet Relay Chat) server, implemented in C++
+This project consists of building our own IRC server following the famous 1988-era Internet Relay Chat protocol.
+A client implementation is not part of the project — instead, we used real IRC clients (e.g., irssi) to test the server.
+
 
 https://github.com/user-attachments/assets/e2a23788-b88c-45b1-a42f-dbeac9704303
 
-> [!TIP]
-> If you're at a 42 school and doing this project: It's genuinely so much better to ask fellow students instead of reading online solutions ✨
-
 ---
+## 🛠️ Features (Mandatory)
+The server behaves like a Real™ IRC server, implementing the following core networking and protocol features:
 
-## Description
+### 🔧 Core Functionality
+- Handle multiple clients simultaneously
+- Use TCP/IP (IPv4)
+- Use non-blocking I/O
+- Use a single epoll event loop for all I/O
+- Correctly handle partial packets (fragmented messages)
+- No forking, no threads
+- Does not block, hang, or crash unexpectedly
 
-An IRC (Internet Relay Chat) server implemented in C++20.
-Compliant with [RFC 1459](https://datatracker.ietf.org/doc/html/rfc1459) and [Horse Docs](https://modern.ircdocs.horse/) standards.
-Made for the reference IRC client [Irssi](https://irssi.org/) (with additional testing in [Netcat](https://en.wikipedia.org/wiki/Netcat)).
+### 💬 Supported IRC Commands
 
-Core functionality:
-- A single event loop, with non-blocking IO through event polling - no threads or subprocesses.
-- Buffers incoming requests, handling fragmented input.
-- Compatible with IPv4.
-- Supports file transfers via the DCC (Direct Client-to-Client) protocol.
-- Secondary bot program, warning users who use naughty words: Connects to the server as a user, responds to channel invites, replies to specific messages.
+#### Basic commands
+Implemented the essential IRC commands:
+```
+PASS
+NICK
+USER
+JOIN
+PRIVMSG
+PING / PONG
+Broadcasting messages to all users in a channel
+```
 
-The server supports the following IRC commands:
-- Basic commands:
-  - Timeout checks:
-    - `PING`
-  - Registration:
-    - `PASS`
-    - `USER`
-    - `NICK` (including nickname changing after registration)
-  - Server & channel access:
-    - `JOIN`
-    - `PART`
-    - `QUIT`
-  - Messaging:
-    - `PRIVMSG` (including messages to channels)
-    - `NOTICE`
-  - Info:
-    - `TOPIC`
-    - `MOTD`
-    - `LIST`
-    - `NAMES`
-    - `WHO`
-    - `LUSERS`
-- Channel operators commands:
-  - `KICK`
-  - `INVITE`
-  - `MODE` with the following channel settings:
-    - `i` - toggle invite-only channel
-    - `t` - toggle topic-editing limited to operators
-    - `k` - set/remove channel key (password)
-    - `i` - give/take operator privileges
-    - `l` - set/remove user limit
-
-## Usage
-
-> [!NOTE]
-> Code was written and tested for Linux (using Hive's Ubuntu iMacs)
-
-1. Compile the program with `make`
-2. Launch the server with `./ircserv [NETWORK PORT] [PASSWORD]` (empty password == no password)
-3. Connect to the server with your IRC client of choice! Our reference client when making the server was `irssi`.
-
-Optionally, run prudebot with `./ircserv [NETWORK PORT] [PASSWORD] [BOT NICKNAME]` at any point after launching the server.
-
-
+#### Channel operator commands
+Operators must be able to manage channels using:
+```
+KICK — remove a user from the channel
+INVITE — invite a user to a channel
+TOPIC — set or view the channel topic
+MODE — adjust channel modes:
+    i	  Invite-only channel
+    t	  Only operators may change the topic
+    k	  Channel key (password)
+    o	  Give/take operator privileges
+    l	  Set/remove user limit
+```
+----
+## 📦 Build & Run
+```
+make
+./ircserv <port> <password>
+```
+Example:
+```
+./ircserv 6667 secret
+```
+Then connect using an IRC client. For example:
+```
+server: 127.0.0.1
+port: 6667
+password: secret
+```
 ## Credits
 
 - [Eve Keinan](https://github.com/EvAvKein)
