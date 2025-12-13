@@ -6,6 +6,8 @@ This project consists of building our own IRC server following the famous 1988-e
 A client implementation is not part of the project — instead, we used real IRC clients (e.g., irssi) to test the server.
 
 
+## 🎬 Demo
+
 https://github.com/user-attachments/assets/e2a23788-b88c-45b1-a42f-dbeac9704303
 
 ---
